@@ -1,0 +1,37 @@
+const Order = require("../models/Order");
+
+class OrderRepository {
+  async create(orderData) {
+    return await Order.create(orderData);
+  }
+
+  async findById(id) {
+    return await Order.findById(id)
+      .populate("customerId", "firstName lastName email phone")
+      .populate("items.mealId")
+      .populate("items.chefId", "firstName lastName kitchenName");
+  }
+
+  async findByCustomerId(customerId) {
+    return await Order.find({ customerId })
+      .sort({ createdAt: -1 })
+      .populate("items.chefId", "firstName lastName kitchenName");
+  }
+
+  async findByChefId(chefId) {
+    // This finds orders that contain at least one item from this chef
+    return await Order.find({ "items.chefId": chefId })
+      .sort({ createdAt: -1 })
+      .populate("customerId", "firstName lastName email phone");
+  }
+
+  async updateStatus(orderId, status) {
+    return await Order.findByIdAndUpdate(
+      orderId,
+      { status },
+      { new: true, runValidators: true }
+    );
+  }
+}
+
+module.exports = new OrderRepository();
