@@ -539,7 +539,7 @@ Create an order from the current cart items.
       }
     ],
     "totalAmount": 31.98,
-    "status": "pending",
+    "status": "preparing",
     "shippingAddress": "...",
     "contactPhone": "..."
   },
@@ -548,11 +548,45 @@ Create an order from the current cart items.
 ```
 
 ### Get My Orders
-Retrieve all orders for the authenticated customer.
+Retrieve all orders for the authenticated customer. Includes full item snapshots and statuses.
 
 - **URL:** `/orders/my-orders`
 - **Method:** `GET`
 - **Auth Required:** Yes (Customer role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "...",
+      "items": [
+        {
+          "name": "Spaghetti Carbonara",
+          "description": "Classic Italian pasta",
+          "image": "https://res.cloudinary.com/...",
+          "unitPrice": 15.99,
+          "quantity": 2,
+          "subtotal": 31.98,
+          "status": "preparing"
+        }
+      ],
+      "totalAmount": 31.98,
+      "status": "preparing",
+      "createdAt": "..."
+    }
+  ],
+  "message": "Orders retrieved successfully"
+}
+```
+
+### Get Chef Orders
+Retrieve all orders containing items from the authenticated chef. Only items belonging to the chef are returned.
+
+- **URL:** `/orders/chef/orders`
+- **Method:** `GET`
+- **Auth Required:** Yes (Chef role)
 
 ### Get Order Details
 Retrieve details of a specific order.
@@ -567,7 +601,15 @@ Change the status of an order.
 - **URL:** `/orders/:id/status`
 - **Method:** `PATCH`
 - **Auth Required:** Yes (Chef or Admin role)
-- **Mandatory Fields:** `status` (`pending`, `confirmed`, `preparing`, `out_for_delivery`, `delivered`, `cancelled`)
+- **Mandatory Fields:** `status` (`preparing`, `out_for_delivery`, `delivered`)
+
+### Update Order Item Status
+Change the status of a specific item in an order.
+
+- **URL:** `/orders/:id/items/status`
+- **Method:** `PATCH`
+- **Auth Required:** Yes (Chef role)
+- **Mandatory Fields:** `mealId`, `status` (`preparing`, `ready`, `delivered`)
 
 ---
 
