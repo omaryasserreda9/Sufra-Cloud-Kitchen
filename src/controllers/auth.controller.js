@@ -4,6 +4,7 @@ const asyncHandler = require("../utils/asyncHandler");
 
 class AuthController {
   register = asyncHandler(async (req, res) => {
+    console.log("REGISTER START");
     const result = await authService.register(req.body);
 
     res.status(201).json(

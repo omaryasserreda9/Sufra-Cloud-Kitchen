@@ -2,12 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
-const mongoose = require("mongoose");
-
 
 const errorMiddleware = require("./middlewares/error.middleware");
-const connectDB = require("./config/database");
-
 
 
 const authRoutes = require("./routes/auth.routes");
@@ -34,32 +30,11 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 // Health Check
-app.get("/", async (req, res) => {
-  try {
-    console.log("Trying Mongo connection...");
-
-    const conn = await mongoose.connect(process.env.MONGODB_URI, {
-      serverSelectionTimeoutMS: 5000,
-    });
-
-    console.log("MongoDB Connected:", conn.connection.host);
-
-    return res.status(200).json({
-      success: true,
-      message: "Welcome to the Meal Delivery API",
-      mongoState: "connected",
-      host: conn.connection.host,
-    });
-  } catch (err) {
-    console.log("MongoDB Error:", err.message);
-
-    return res.status(500).json({
-      success: false,
-      message: "MongoDB connection failed",
-      mongoState: "error",
-      error: err.message,
-    });
-  }
+app.get("/", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "Cloud Kitchen API Running..",
+  });
 });
 
 // Routes
