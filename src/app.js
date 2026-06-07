@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const connectDB = require("./config/database");
+
 
 const errorMiddleware = require("./middlewares/error.middleware");
 
@@ -13,6 +15,8 @@ const mealRoutes = require("./routes/meal.routes");
 const categoryRoutes = require("./routes/category.routes");
 const cartRoutes = require("./routes/cart.routes");
 const orderRoutes = require("./routes/order.routes");
+
+connectDB().catch(console.error);
 
 const app = express();
 

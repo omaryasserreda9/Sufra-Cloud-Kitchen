@@ -13,20 +13,23 @@ class AuthService {
   async register(userData) {
     const { firstName, lastName, email, password, role } = userData;
 
-    console.log("REGISTER START");
+    console.log("REGISTER SERVICE START");
 
-    // ✅ FORCE DB CONNECTION HERE
-    await connectDB();
-
-    console.log("DB CONNECTED INSIDE SERVICE");
+    if (!role || !email || !password) {
+      throw new ApiError(400, "Missing required fields");
+    }
 
     const Model = getModelByRole(role);
 
+    if (!Model) {
+      throw new ApiError(400, "Invalid role");
+    }
+
+    console.log("MODEL OK:", Model.modelName);
+
     const existingUser = await Model.findOne({ email });
 
-    if (existingUser) {
-      throw new ApiError(400, "User already exists");
-    }
+    console.log("AFTER FINDONE");
 
     const passwordHash = await bcrypt.hash(password, 10);
 
@@ -37,10 +40,10 @@ class AuthService {
 
     const token = generateToken(user._id, user.role);
 
-    return {
-      user,
-      token,
-    };
+    const userObject = user.toObject();
+    delete userObject.passwordHash;
+
+    return { user: userObject, token };
   }
 
   /**
