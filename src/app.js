@@ -36,23 +36,28 @@ app.use(morgan("dev"));
 // Health Check
 app.get("/", async (req, res) => {
   try {
-    const state = mongoose.connection.readyState;
+    console.log("Trying Mongo connection...");
 
-    res.status(200).json({
+    const conn = await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 5000,
+    });
+
+    console.log("MongoDB Connected:", conn.connection.host);
+
+    return res.status(200).json({
       success: true,
       message: "Welcome to the Meal Delivery API",
-      mongoState:
-        state === 1
-          ? "connected"
-          : state === 2
-          ? "connecting"
-          : "disconnected",
+      mongoState: "connected",
+      host: conn.connection.host,
     });
   } catch (err) {
-    res.status(500).json({
+    console.log("MongoDB Error:", err.message);
+
+    return res.status(500).json({
       success: false,
+      message: "MongoDB connection failed",
       mongoState: "error",
-      error: err,
+      error: err.message,
     });
   }
 });
