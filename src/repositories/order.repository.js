@@ -26,11 +26,24 @@ class OrderRepository {
   }
 
   async updateStatus(orderId, status) {
-    return await Order.findByIdAndUpdate(
-      orderId,
-      { status },
-      { new: true, runValidators: true }
-    );
+    const order = await Order.findById(orderId);
+    if (!order) return null;
+    order.status = status;
+    return await order.save();
+  }
+
+  async updateItemStatus(orderId, mealId, status) {
+    const order = await Order.findById(orderId);
+    if (!order) return null;
+
+    const item = order.items.find((item) => item.mealId.toString() === mealId.toString());
+    if (item) {
+      item.status = status;
+      // Mark items as modified to trigger pre-save hook
+      order.markModified("items");
+      return await order.save();
+    }
+    return null;
   }
 }
 
