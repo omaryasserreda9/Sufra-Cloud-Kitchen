@@ -6,10 +6,10 @@ const ROLES = require("../constants/roles");
 
 const router = express.Router();
 
-router.use(authMiddleware);
+// router.use(authMiddleware);
 
 // Customer endpoints
-router.post("/checkout", orderController.checkout);
+router.post("/checkout", authorize(ROLES.CUSTOMER), orderController.checkout);
 
 router.get(
   "/my-orders",
