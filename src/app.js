@@ -2,6 +2,8 @@ const express = require("express");
 const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
+const mongoose = require("mongoose");
+
 
 const errorMiddleware = require("./middlewares/error.middleware");
 const connectDB = require("./config/database");
