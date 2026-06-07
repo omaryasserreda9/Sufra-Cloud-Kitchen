@@ -4,6 +4,8 @@ const helmet = require("helmet");
 const morgan = require("morgan");
 
 const errorMiddleware = require("./middlewares/error.middleware");
+const connectDB = require("./config/database");
+
 
 
 const authRoutes = require("./routes/auth.routes");
@@ -30,11 +32,27 @@ app.use(express.urlencoded({ extended: true }));
 app.use(morgan("dev"));
 
 // Health Check
-app.get("/", (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: "Welcome to the Meal Delivery API",
-  });
+app.get("/", async (req, res) => {
+  try {
+    const state = mongoose.connection.readyState;
+
+    res.status(200).json({
+      success: true,
+      message: "Welcome to the Meal Delivery API",
+      mongoState:
+        state === 1
+          ? "connected"
+          : state === 2
+          ? "connecting"
+          : "disconnected",
+    });
+  } catch (err) {
+    res.status(500).json({
+      success: false,
+      mongoState: "error",
+      error: err.message,
+    });
+  }
 });
 
 // Routes
