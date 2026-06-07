@@ -43,7 +43,7 @@ const orderItemSchema = new mongoose.Schema(
       default: ORDER_ITEM_STATUS.PREPARING,
     },
   },
-  { _id: false }
+  { _id: false },
 );
 
 const orderSchema = new mongoose.Schema(
@@ -75,29 +75,26 @@ const orderSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
-  }
+  },
 );
 
 // Auto-calculate order status based on items
 orderSchema.pre("save", function (next) {
-  if (this.isModified("items")) {
-    const itemStatuses = this.items.map((item) => item.status);
+  const items = Array.isArray(this.items) ? this.items : [];
 
-    if (itemStatuses.every((status) => status === ORDER_ITEM_STATUS.DELIVERED)) {
-      this.status = ORDER_STATUS.DELIVERED;
-    } else if (
-      itemStatuses.every(
-        (status) =>
-          status === ORDER_ITEM_STATUS.READY ||
-          status === ORDER_ITEM_STATUS.DELIVERED
-      )
-    ) {
-      this.status = ORDER_STATUS.OUT_FOR_DELIVERY;
-    } else {
-      this.status = ORDER_STATUS.PREPARING;
-    }
-  }
-  next();
+  const itemStatuses = items.map(
+    (i) => i.status ?? ORDER_ITEM_STATUS.PREPARING,
+  );
+
+  this.status = itemStatuses.every((s) => s === ORDER_ITEM_STATUS.DELIVERED)
+    ? ORDER_STATUS.DELIVERED
+    : itemStatuses.every(
+          (s) =>
+            s === ORDER_ITEM_STATUS.READY || s === ORDER_ITEM_STATUS.DELIVERED,
+        )
+      ? ORDER_STATUS.OUT_FOR_DELIVERY
+      : ORDER_STATUS.PREPARING;
+
 });
 
 module.exports = mongoose.model("Order", orderSchema);

@@ -6,7 +6,7 @@ const ROLES = require("../constants/roles");
 
 const router = express.Router();
 
-// router.use(authMiddleware);
+router.use(authMiddleware);
 
 // Customer endpoints
 router.post("/checkout", authorize(ROLES.CUSTOMER), orderController.checkout);
@@ -25,10 +25,20 @@ router.get(
 );
 
 // Chef/Admin endpoints
+router.get(
+  "/chef/orders",
+  authorize(ROLES.CHEF),
+  orderController.getChefOrders,
+);
 router.patch(
   "/:id/status",
   authorize(ROLES.CHEF, ROLES.ADMIN),
   orderController.updateStatus,
+);
+router.patch(
+  "/:id/items/status",
+  authorize(ROLES.CHEF),
+  orderController.updateItemStatus,
 );
 
 module.exports = router;
