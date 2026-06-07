@@ -33,7 +33,7 @@ app.use(morgan("dev"));
 app.get("/", (req, res) => {
   res.status(200).json({
     success: true,
-    message: process.env.MONGODB_URI,
+    message: "Welcome to the Meal Delivery API",
   });
 });
 
