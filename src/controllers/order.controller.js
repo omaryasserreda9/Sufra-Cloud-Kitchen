@@ -23,6 +23,15 @@ class OrderController {
       .json(new ApiResponse(200, orders, "Orders retrieved successfully"));
   });
 
+  getChefOrders = asyncHandler(async (req, res) => {
+    const chefId = req.user._id;
+    const orders = await orderService.getChefOrders(chefId);
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, orders, "Chef orders retrieved successfully"));
+  });
+
   getOrderById = asyncHandler(async (req, res) => {
     const orderId = req.params.id;
     const userId = req.user._id;
@@ -39,13 +48,23 @@ class OrderController {
     const orderId = req.params.id;
     const { status } = req.body;
 
-    // Additional check: maybe only chef or admin can update status
-    // For now, I'll allow based on route authorization
     const order = await orderService.updateOrderStatus(orderId, status);
 
     res
       .status(200)
       .json(new ApiResponse(200, order, "Order status updated successfully"));
+  });
+
+  updateItemStatus = asyncHandler(async (req, res) => {
+    const orderId = req.params.id;
+    const { mealId, status } = req.body;
+    const chefId = req.user._id;
+
+    const order = await orderService.updateOrderItemStatus(orderId, mealId, status, chefId);
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, order, "Order item status updated successfully"));
   });
 }
 

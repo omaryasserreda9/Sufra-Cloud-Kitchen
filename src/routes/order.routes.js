@@ -16,6 +16,8 @@ router.get("/my-orders", authorize(ROLES.CUSTOMER), orderController.getCustomerO
 router.get("/:id", authorize(ROLES.CUSTOMER, ROLES.CHEF, ROLES.ADMIN), orderController.getOrderById);
 
 // Chef/Admin endpoints
+router.get("/chef/orders", authorize(ROLES.CHEF), orderController.getChefOrders);
 router.patch("/:id/status", authorize(ROLES.CHEF, ROLES.ADMIN), orderController.updateStatus);
+router.patch("/:id/items/status", authorize(ROLES.CHEF), orderController.updateItemStatus);
 
 module.exports = router;
