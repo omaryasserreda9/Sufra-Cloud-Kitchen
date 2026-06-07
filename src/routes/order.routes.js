@@ -9,7 +9,7 @@ const router = express.Router();
 router.use(authMiddleware);
 
 // Customer endpoints
-router.post("/checkout", authorize(ROLES.CUSTOMER), orderController.checkout);
+router.post("/checkout", orderController.checkout);
 
 router.get(
   "/my-orders",
