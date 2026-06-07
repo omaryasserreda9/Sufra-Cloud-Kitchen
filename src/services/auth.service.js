@@ -12,35 +12,37 @@ class AuthService {
   async register(userData) {
     const { firstName, lastName, email, password, role } = userData;
 
-    if (!role) {
-      throw new ApiError(400, "Role is required for registration.");
+    console.log("REGISTER SERVICE START");
+
+    if (!role || !email || !password) {
+      throw new ApiError(400, "Missing required fields");
     }
 
     const Model = getModelByRole(role);
 
-    // Check only the specific role's collection for an existing email
+    if (!Model) {
+      throw new ApiError(400, "Invalid role");
+    }
+
+    console.log("MODEL OK:", Model.modelName);
+
     const existingUser = await Model.findOne({ email });
 
-    if (existingUser) {
-      throw new ApiError(400, `An account with this email already exists for the role: ${role}.`);
-    }
+    console.log("AFTER FINDONE");
 
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const userPayload = { ...userData, passwordHash };
-    delete userPayload.password;
-
-    const user = await Model.create(userPayload);
+    const user = await Model.create({
+      ...userData,
+      passwordHash,
+    });
 
     const token = generateToken(user._id, user.role);
 
     const userObject = user.toObject();
     delete userObject.passwordHash;
 
-    return {
-      user: userObject,
-      token,
-    };
+    return { user: userObject, token };
   }
 
   /**
@@ -61,7 +63,10 @@ class AuthService {
     const user = await Model.findOne({ email }).select("+passwordHash");
 
     if (!user) {
-      throw new ApiError(401, "Invalid email or password for the specified role.");
+      throw new ApiError(
+        401,
+        "Invalid email or password for the specified role.",
+      );
     }
 
     const isMatch = await bcrypt.compare(password, user.passwordHash);
