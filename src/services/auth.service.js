@@ -2,6 +2,7 @@ const bcrypt = require("bcryptjs");
 const { getModelByRole } = require("../utils/modelResolver");
 const generateToken = require("../utils/generateToken");
 const ApiError = require("../utils/ApiError");
+const connectDB = require("../config/database");
 
 class AuthService {
   /**
@@ -12,23 +13,20 @@ class AuthService {
   async register(userData) {
     const { firstName, lastName, email, password, role } = userData;
 
-    console.log("REGISTER SERVICE START");
+    console.log("REGISTER START");
 
-    if (!role || !email || !password) {
-      throw new ApiError(400, "Missing required fields");
-    }
+    // ✅ FORCE DB CONNECTION HERE
+    await connectDB();
+
+    console.log("DB CONNECTED INSIDE SERVICE");
 
     const Model = getModelByRole(role);
 
-    if (!Model) {
-      throw new ApiError(400, "Invalid role");
-    }
-
-    console.log("MODEL OK:", Model.modelName);
-
     const existingUser = await Model.findOne({ email });
 
-    console.log("AFTER FINDONE");
+    if (existingUser) {
+      throw new ApiError(400, "User already exists");
+    }
 
     const passwordHash = await bcrypt.hash(password, 10);
 
@@ -39,10 +37,10 @@ class AuthService {
 
     const token = generateToken(user._id, user.role);
 
-    const userObject = user.toObject();
-    delete userObject.passwordHash;
-
-    return { user: userObject, token };
+    return {
+      user,
+      token,
+    };
   }
 
   /**
