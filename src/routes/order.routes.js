@@ -10,12 +10,25 @@ router.use(authMiddleware);
 
 // Customer endpoints
 router.post("/checkout", authorize(ROLES.CUSTOMER), orderController.checkout);
-router.get("/my-orders", authorize(ROLES.CUSTOMER), orderController.getCustomerOrders);
+
+router.get(
+  "/my-orders",
+  authorize(ROLES.CUSTOMER),
+  orderController.getCustomerOrders,
+);
 
 // General (Customer, Chef, Admin can view their relevant orders)
-router.get("/:id", authorize(ROLES.CUSTOMER, ROLES.CHEF, ROLES.ADMIN), orderController.getOrderById);
+router.get(
+  "/:id",
+  authorize(ROLES.CUSTOMER, ROLES.CHEF, ROLES.ADMIN),
+  orderController.getOrderById,
+);
 
 // Chef/Admin endpoints
-router.patch("/:id/status", authorize(ROLES.CHEF, ROLES.ADMIN), orderController.updateStatus);
+router.patch(
+  "/:id/status",
+  authorize(ROLES.CHEF, ROLES.ADMIN),
+  orderController.updateStatus,
+);
 
 module.exports = router;
