@@ -52,7 +52,7 @@ app.get("/", async (req, res) => {
     res.status(500).json({
       success: false,
       mongoState: "error",
-      error: err.message,
+      error: err,
     });
   }
 });
