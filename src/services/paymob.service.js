@@ -3,94 +3,114 @@ const ApiError = require("../utils/ApiError");
 class PaymobService {
   constructor() {
     this.apiKey = process.env.PAYMOB_API_KEY;
-    this.integrationId = process.env.PAYMOB_INTEGRATION_ID;
-    this.iframeId = process.env.PAYMOB_IFRAME_ID;
-    this.baseUrl = "https://accept.paymob.com/api";
+    this.paymentLoginUrl = process.env.PAYMOB_LOGIN_URL || "https://accept.paymob.com/api/auth/tokens";
+    this.paymentApiUrl = process.env.PAYMOB_API_URL || "https://accept.paymob.com/api/ecommerce/orders";
+    this.paymentMethods = process.env.PAYMOB_METHOD_ID_CARD
   }
-
-  async authenticate() {
-    const response = await fetch(`${this.baseUrl}/auth/tokens`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ api_key: this.apiKey }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new ApiError(500, `Paymob Authentication Failed: ${data.message || response.statusText}`);
-    }
-    return data.token;
-  }
-
-  async registerOrder(authToken, amountCents, merchantOrderId) {
-    const response = await fetch(`${this.baseUrl}/ecommerce/orders`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        auth_token: authToken,
-        delivery_needed: "false",
-        amount_cents: amountCents,
-        currency: "EGP",
-        merchant_order_id: merchantOrderId,
-        items: [],
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new ApiError(500, `Paymob Order Registration Failed: ${data.message || response.statusText}`);
-    }
-    return data.id;
-  }
-
-  async generatePaymentKey(authToken, orderId, amountCents, billingData) {
-    const response = await fetch(`${this.baseUrl}/acceptance/payment_keys`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        auth_token: authToken,
-        amount_cents: amountCents,
-        expiration: 3600,
-        order_id: orderId,
-        billing_data: {
-          apartment: "NA",
-          email: billingData.email || "NA",
-          floor: "NA",
-          first_name: billingData.firstName || "NA",
-          street: billingData.address || "NA",
-          building: "NA",
-          phone_number: billingData.phone || "NA",
-          shipping_method: "NA",
-          postal_code: "NA",
-          city: "NA",
-          country: "NA",
-          last_name: billingData.lastName || "NA",
-          state: "NA",
-        },
-        currency: "EGP",
-        integration_id: this.integrationId,
-      }),
-    });
-
-    const data = await response.json();
-    if (!response.ok) {
-      throw new ApiError(500, `Paymob Payment Key Generation Failed: ${data.message || response.statusText}`);
-    }
-    return data.token;
-  }
-
-  async initializePayment(amount, merchantOrderId, billingData) {
+  
+  // =========================
+  // MAIN INIT PAYMENT
+  // =========================
+  async initializePayment(amount, paymentId, customer) {
     try {
-      const amountCents = Math.round(amount * 100);
-      const authToken = await this.authenticate();
-      const paymobOrderId = await this.registerOrder(authToken, amountCents, merchantOrderId);
-      const paymentKey = await this.generatePaymentKey(authToken, paymobOrderId, amountCents, billingData);
+      // =========================
+      // Step 1: Validation
+      // =========================
+      if (!amount || amount <= 0) {
+        throw new ApiError(400, "Invalid payment amount");
+      }
 
-      return `https://accept.paymob.com/api/acceptance/iframes/${this.iframeId}?payment_token=${paymentKey}`;
+      if (!customer?.email || !customer?.phone) {
+        throw new ApiError(400, "Missing customer data");
+      }
+
+      // =========================
+      // Step 2: prepare data (Laravel $paymentData)
+      // =========================
+      const amountCents = Math.round(amount * 100);
+
+      const fullName = `${customer.first_name} ${customer.last_name}`;
+
+      const paymentData = {
+        full_name: fullName,
+        phone_number: this.formatPhone(customer.phone),
+        email: customer.email,
+        amount_cents: amountCents,
+        reference_id: paymentId,
+        payment_methods: this.paymentMethods,
+        is_live: false,
+        description: customer.description || "Payment via platform",
+      };
+
+      // =========================
+      // Step 3: get access token (LIKE Laravel login_url)
+      // =========================
+      const accessTokenResponse = await fetch(this.paymentLoginUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          api_key: this.apiKey,
+          expiration: 999999999999,
+        }),
+      });
+
+      const tokenData = await accessTokenResponse.json();
+
+      if (!accessTokenResponse.ok) {
+        throw new ApiError(
+          500,
+          `Paymob Auth Failed: ${tokenData.message || accessTokenResponse.statusText}`,
+        );
+      }
+
+      const token = tokenData.token;
+
+      // =========================
+      // Step 4: send payment request (LIKE Laravel api_url)
+      // =========================
+      const apiResponseRaw = await fetch(this.paymentApiUrl, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(paymentData),
+      });
+
+      const apiResponse = await apiResponseRaw.json();
+
+      if (!apiResponseRaw.ok) {
+        throw new ApiError(
+          500,
+          `Paymob Payment Failed: ${apiResponse.message || apiResponseRaw.statusText}`,
+        );
+      }
+
+      // =========================
+      // Step 5: return ONLY shorten_url (like Laravel)
+      // =========================
+      return apiResponse.shorten_url;
     } catch (error) {
       if (error instanceof ApiError) throw error;
       throw new ApiError(500, `Paymob Initialization Error: ${error.message}`);
     }
+  }
+
+  // =========================
+  // PHONE FORMATTER
+  // =========================
+  formatPhone(phone) {
+    phone = phone.replace(/\D+/g, "");
+
+    if (phone.startsWith("0")) {
+      phone = "+20" + phone.substring(1);
+    } else if (phone.startsWith("20")) {
+      phone = "+" + phone;
+    } else if (!phone.startsWith("+20")) {
+      phone = "+20" + phone;
+    }
+
+    return phone;
   }
 }
 
