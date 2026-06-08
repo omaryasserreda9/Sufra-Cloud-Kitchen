@@ -5,7 +5,7 @@ class PaymobService {
     this.apiKey = process.env.PAYMOB_API_KEY;
     this.paymentLoginUrl = process.env.PAYMOB_LOGIN_URL || "https://accept.paymob.com/api/auth/tokens";
     this.paymentApiUrl = process.env.PAYMOB_API_URL || "https://accept.paymob.com/api/ecommerce/orders";
-    this.paymentMethods = process.env.PAYMOB_METHOD_ID_CARD
+    this.paymentMethods = [process.env.PAYMOB_METHOD_ID_CARD];
   }
   
   // =========================
