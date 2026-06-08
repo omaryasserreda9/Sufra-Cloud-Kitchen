@@ -43,6 +43,16 @@ class CategoryController {
       );
   });
 
+  getActiveCategoriesWithMeals = asyncHandler(async (req, res) => {
+    const { limit } = req.query;
+    const categories = await categoryService.getActiveCategoriesWithMeals(Number(limit) || 5);
+    res
+      .status(200)
+      .json(
+        new ApiResponse(200, categories, "Active categories with random meals retrieved successfully")
+      );
+  });
+
   getCategoryById = asyncHandler(async (req, res) => {
     const { id } = req.params;
     const category = await categoryService.getCategoryById(id);

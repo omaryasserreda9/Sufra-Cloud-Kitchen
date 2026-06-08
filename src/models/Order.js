@@ -72,6 +72,10 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    settlementProcessed: {
+      type: Boolean,
+      default: false,
+    },
   },
   {
     timestamps: true,
@@ -87,7 +91,7 @@ orderSchema.pre("save", function (next) {
   );
 
   this.status = itemStatuses.every((s) => s === ORDER_ITEM_STATUS.DELIVERED)
-    ? ORDER_STATUS.DELIVERED
+    ? ORDER_STATUS.COMPLETED
     : itemStatuses.every(
           (s) =>
             s === ORDER_ITEM_STATUS.READY || s === ORDER_ITEM_STATUS.DELIVERED,
@@ -95,6 +99,7 @@ orderSchema.pre("save", function (next) {
       ? ORDER_STATUS.OUT_FOR_DELIVERY
       : ORDER_STATUS.PREPARING;
 
+  next();
 });
 
 module.exports = mongoose.model("Order", orderSchema);

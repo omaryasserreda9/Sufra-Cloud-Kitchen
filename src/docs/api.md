@@ -373,6 +373,38 @@ Retrieve all active categories for public browsing.
 - **Method:** `GET`
 - **Auth Required:** No
 
+### Get Active Categories with Random Meals
+Retrieve all active categories, each including a selection of random active meals.
+
+- **URL:** `/categories/active-with-meals`
+- **Method:** `GET`
+- **Auth Required:** No
+- **Query Params (Optional):** `limit` (Number of random meals per category, Default: 5)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "...",
+      "name": "Italian",
+      "image": "...",
+      "meals": [
+        {
+          "_id": "...",
+          "name": "Pasta Carbonara",
+          "price": 15,
+          "chefId": { "kitchenName": "..." }
+        },
+        ...
+      ]
+    }
+  ],
+  "message": "Active categories with random meals retrieved successfully"
+}
+```
+
 ### Get All Categories (Admin Only)
 Retrieve all categories (active and inactive).
 
@@ -519,6 +551,7 @@ Create an order from the current cart items.
 - **URL:** `/orders/checkout`
 - **Method:** `POST`
 - **Auth Required:** Yes (Customer role)
+- **Mandatory Fields:** `paymentMethod` (`cash`, `paymob`)
 - **Optional Fields:** `shippingAddress`, `contactPhone` (Uses profile defaults if not provided)
 - **Success Response:**
 ```json
@@ -526,22 +559,21 @@ Create an order from the current cart items.
   "success": true,
   "statusCode": 201,
   "data": {
-    "_id": "...",
-    "customerId": "...",
-    "items": [
-      {
-        "mealId": "...",
-        "name": "Spaghetti Carbonara",
-        "chefId": "...",
-        "unitPrice": 15.99,
-        "quantity": 2,
-        "subtotal": 31.98
-      }
-    ],
-    "totalAmount": 31.98,
-    "status": "preparing",
-    "shippingAddress": "...",
-    "contactPhone": "..."
+    "order": {
+      "_id": "...",
+      "customerId": "...",
+      "items": [...],
+      "totalAmount": 31.98,
+      "status": "awaiting_payment",
+      "shippingAddress": "...",
+      "contactPhone": "..."
+    },
+    "payment": {
+      "_id": "...",
+      "paymentMethod": "paymob",
+      "paymentStatus": "pending"
+    },
+    "paymobUrl": "https://accept.paymob.com/..." (Only if paymentMethod is paymob)
   },
   "message": "Order placed successfully"
 }
@@ -601,7 +633,7 @@ Change the status of an order.
 - **URL:** `/orders/:id/status`
 - **Method:** `PATCH`
 - **Auth Required:** Yes (Chef or Admin role)
-- **Mandatory Fields:** `status` (`preparing`, `out_for_delivery`, `delivered`)
+- **Mandatory Fields:** `status` (`awaiting_payment`, `preparing`, `out_for_delivery`, `completed`)
 
 ### Update Order Item Status
 Change the status of a specific item in an order.
@@ -610,6 +642,95 @@ Change the status of a specific item in an order.
 - **Method:** `PATCH`
 - **Auth Required:** Yes (Chef role)
 - **Mandatory Fields:** `mealId`, `status` (`preparing`, `ready`, `delivered`)
+
+---
+
+## 8. Settlement Module (`/settlement`)
+Financial features for chefs to track earnings and wallet.
+
+### Get Chef Wallet
+Retrieve the current balance of the chef.
+
+- **URL:** `/settlement/wallet`
+- **Method:** `GET`
+- **Auth Required:** Yes (Chef role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": {
+    "chefId": "...",
+    "availableBalance": 150.50
+  },
+  "message": "Wallet retrieved successfully"
+}
+```
+
+### Get Earnings History
+Retrieve all earnings records for the chef.
+
+- **URL:** `/settlement/earnings`
+- **Method:** `GET`
+- **Auth Required:** Yes (Chef role)
+
+---
+
+## 9. Withdrawals Module (`/withdrawals`)
+Manage payout requests for chefs.
+
+### Request Withdrawal
+Submit a request to withdraw funds from the wallet.
+
+- **URL:** `/withdrawals/request`
+- **Method:** `POST`
+- **Auth Required:** Yes (Chef role)
+- **Mandatory Fields:** `amount`
+- **Optional Fields:** `notes`
+
+### Get Withdrawal History (Chef)
+Retrieve personal withdrawal history.
+
+- **URL:** `/withdrawals/history`
+- **Method:** `GET`
+- **Auth Required:** Yes (Chef role)
+
+### Get All Withdrawal Requests (Admin Only)
+List all withdrawal requests.
+
+- **URL:** `/withdrawals/requests`
+- **Method:** `GET`
+- **Auth Required:** Yes (Admin role)
+- **Query Params (Optional):** `status` (`pending`, `approved`, `rejected`, `completed`)
+
+### Approve Withdrawal (Admin Only)
+Approve a withdrawal request and deduct funds from the chef's wallet.
+
+- **URL:** `/withdrawals/:id/approve`
+- **Method:** `PATCH`
+- **Auth Required:** Yes (Admin role)
+- **Optional Fields:** `notes`
+
+### Reject Withdrawal (Admin Only)
+Reject a withdrawal request.
+
+- **URL:** `/withdrawals/:id/reject`
+- **Method:** `PATCH`
+- **Auth Required:** Yes (Admin role)
+- **Optional Fields:** `notes`
+
+---
+
+## 10. Payments Module (`/payments`)
+Payment-related webhooks and integrations.
+
+### Paymob Webhook
+Automated callback for Paymob transaction confirmation.
+
+- **URL:** `/payments/paymob/webhook`
+- **Method:** `POST`
+- **Auth Required:** No (External)
+- **Description:** This endpoint is called by Paymob to confirm successful transactions. It automatically updates the payment status and order state.
 
 ---
 

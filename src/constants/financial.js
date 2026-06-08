@@ -1,0 +1,5 @@
+const FINANCIAL_CONFIG = {
+  PLATFORM_COMMISSION_RATE: 0.1, // 10%
+};
+
+module.exports = FINANCIAL_CONFIG;

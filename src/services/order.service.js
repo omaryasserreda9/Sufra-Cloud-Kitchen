@@ -5,7 +5,11 @@ const ORDER_STATUS = require("../constants/orderStatus");
 
 class OrderService {
   async checkout(customer, checkoutData) {
-    const { shippingAddress, contactPhone } = checkoutData;
+    const { shippingAddress, contactPhone, paymentMethod } = checkoutData;
+
+    if (!paymentMethod) {
+      throw new ApiError(400, "Payment method is required");
+    }
 
     // 1. Get current cart
     const cart = await cartService.getCart(customer._id);
@@ -45,18 +49,34 @@ class OrderService {
       totalAmount,
       shippingAddress: shippingAddress || customer.address,
       contactPhone: contactPhone || customer.phone,
+      status: paymentMethod === "cash" ? ORDER_STATUS.PREPARING : ORDER_STATUS.AWAITING_PAYMENT,
     });
 
-    if (!order.shippingAddress || !order.contactPhone) {
-        // If still missing (neither provided nor in profile)
-        // We might want to throw an error, but for now I'll assume they are provided
-        // or the model will throw validation error.
-    }
+    // 4. Create Payment
+    const paymentService = require("./payment.service");
+    const { payment, paymobUrl } = await paymentService.createPayment(
+      {
+        orderId: order._id,
+        paymentMethod,
+        amount: totalAmount,
+      },
+      customer
+    );
 
-    // 4. Clear Cart
+    // 5. Clear Cart
     await cartService.clearCart(customer._id);
 
-    return order;
+    return { order, payment, paymobUrl };
+  }
+
+  async handlePaymentConfirmed(orderId) {
+    const order = await orderRepository.findById(orderId);
+    if (!order) return;
+
+    if (order.status === ORDER_STATUS.AWAITING_PAYMENT) {
+      await orderRepository.updateStatus(orderId, ORDER_STATUS.PREPARING);
+      // Here you could also trigger notifications to chefs
+    }
   }
 
   async getCustomerOrders(customerId) {
@@ -114,6 +134,16 @@ class OrderService {
     if (!order) {
       throw new ApiError(404, "Order not found");
     }
+
+    // If order is completed, calculate and distribute earnings
+    if (status === ORDER_STATUS.COMPLETED) {
+      const settlementService = require("./settlement.service");
+      await settlementService.triggerSettlement(orderId);
+
+      const paymentService = require("./payment.service");
+      await paymentService.confirmPaymentByOrder(orderId);
+    }
+
     return order;
   }
 
@@ -155,7 +185,18 @@ class OrderService {
        throw new ApiError(400, `Invalid status transition: ${item.status} -> ${status}`);
     }
 
-    return await orderRepository.updateItemStatus(orderId, mealId, status);
+    const updatedOrder = await orderRepository.updateItemStatus(orderId, mealId, status);
+
+    // If whole order is now completed, calculate and distribute earnings
+    if (updatedOrder && updatedOrder.status === ORDER_STATUS.COMPLETED) {
+      const settlementService = require("./settlement.service");
+      await settlementService.triggerSettlement(orderId);
+
+      const paymentService = require("./payment.service");
+      await paymentService.confirmPaymentByOrder(orderId);
+    }
+
+    return updatedOrder;
   }
 }
 
