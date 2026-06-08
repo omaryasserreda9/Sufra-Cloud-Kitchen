@@ -99,7 +99,6 @@ orderSchema.pre("save", function (next) {
       ? ORDER_STATUS.OUT_FOR_DELIVERY
       : ORDER_STATUS.PREPARING;
 
-  next();
 });
 
 module.exports = mongoose.model("Order", orderSchema);
