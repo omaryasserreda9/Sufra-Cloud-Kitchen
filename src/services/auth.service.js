@@ -40,8 +40,8 @@ class AuthService {
 
     // Create wallet for chef if role is chef
     if (role === "chef") {
-      const financialService = require("./financial.service");
-      await financialService.getChefWallet(user._id);
+      const settlementService = require("./settlement.service");
+      await settlementService.getChefWallet(user._id);
     }
 
     const token = generateToken(user._id, user.role);
