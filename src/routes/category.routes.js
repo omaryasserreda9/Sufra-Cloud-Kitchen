@@ -10,6 +10,7 @@ const router = express.Router();
 
 // Publicly accessible route to get active categories
 router.get("/active", categoryController.getActiveCategories);
+router.get("/active-with-meals", categoryController.getActiveCategoriesWithMeals);
 
 // Protected routes for Admin only
 router.use(authMiddleware);

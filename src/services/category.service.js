@@ -18,6 +18,37 @@ class CategoryService {
     return await Category.find({ status: "active" });
   }
 
+  async getActiveCategoriesWithMeals(mealsLimit = 5) {
+    const categories = await Category.find({ status: "active" });
+    const Meal = require("../models/Meal");
+
+    const result = await Promise.all(
+      categories.map(async (category) => {
+        const meals = await Meal.aggregate([
+          {
+            $match: {
+              status: "active",
+              categories: category._id,
+            },
+          },
+          { $sample: { size: mealsLimit } },
+        ]);
+
+        const populatedMeals = await Meal.populate(meals, [
+          { path: "chefId", select: "firstName lastName kitchenName" },
+          { path: "categories" },
+        ]);
+
+        return {
+          ...category.toObject(),
+          meals: populatedMeals,
+        };
+      })
+    );
+
+    return result;
+  }
+
   async getCategoryById(id) {
     const category = await Category.findById(id);
     if (!category) {

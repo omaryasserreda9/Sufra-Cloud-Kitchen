@@ -38,6 +38,12 @@ class AuthService {
       passwordHash,
     });
 
+    // Create wallet for chef if role is chef
+    if (role === "chef") {
+      const financialService = require("./financial.service");
+      await financialService.getChefWallet(user._id);
+    }
+
     const token = generateToken(user._id, user.role);
 
     const userObject = user.toObject();

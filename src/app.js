@@ -15,6 +15,9 @@ const mealRoutes = require("./routes/meal.routes");
 const categoryRoutes = require("./routes/category.routes");
 const cartRoutes = require("./routes/cart.routes");
 const orderRoutes = require("./routes/order.routes");
+const settlementRoutes = require("./routes/settlement.routes");
+const paymentRoutes = require("./routes/payment.routes");
+const withdrawalRoutes = require("./routes/withdrawal.routes");
 
 connectDB().catch(console.error);
 
@@ -49,6 +52,9 @@ app.use("/api/meals", mealRoutes);
 app.use("/api/categories", categoryRoutes);
 app.use("/api/cart", cartRoutes);
 app.use("/api/orders", orderRoutes);
+app.use("/api/settlement", settlementRoutes);
+app.use("/api/payments", paymentRoutes);
+app.use("/api/withdrawals", withdrawalRoutes);
 
 // 404 Handler
 app.use((req, res) => {
