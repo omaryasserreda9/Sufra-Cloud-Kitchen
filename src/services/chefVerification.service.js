@@ -1,4 +1,5 @@
 const ChefVerificationRequest = require("../models/ChefVerificationRequest");
+const Chef = require("../models/Chef");
 const ApiError = require("../utils/ApiError");
 const VERIFICATION_STATUS = require("../constants/verificationStatus");
 
@@ -44,7 +45,7 @@ class ChefVerificationService {
 
   async getVerificationStatus(chefId) {
     const request = await ChefVerificationRequest.findOne({ chefId });
-    
+
     if (!request) {
       throw new ApiError(404, "No verification request found for this chef");
     }
@@ -65,6 +66,14 @@ class ChefVerificationService {
 
     if (!request) {
       throw new ApiError(404, "Verification request not found");
+    }
+
+    // If request is approved, update chef verification status
+    if (status === VERIFICATION_STATUS.APPROVED) {
+      await Chef.findByIdAndUpdate(request.chefId, { isVerified: true });
+    } else if (status === VERIFICATION_STATUS.FAILED) {
+      // If request failed, ensure chef is not verified
+      await Chef.findByIdAndUpdate(request.chefId, { isVerified: false });
     }
 
     return request;
