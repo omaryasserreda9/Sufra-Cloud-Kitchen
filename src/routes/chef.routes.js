@@ -25,7 +25,6 @@ router.put(
 router.get(
   "/",
   authMiddleware,
-  authorize(ROLES.ADMIN),
   chefController.getAllChefs,
 );
 
