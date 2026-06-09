@@ -29,7 +29,6 @@ router.get(
 
 router.get(
   "/:id",
-  authMiddleware,
   chefController.getChefDetails,
 );
 
