@@ -20,7 +20,9 @@ class MealRepository {
                 as: "customer",
               },
             },
-            { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
+            {
+              $unwind: { path: "$customer", preserveNullAndEmptyArrays: true },
+            },
             {
               $project: {
                 rating: 1,
@@ -70,10 +72,7 @@ class MealRepository {
   }
 
   async findAll(filter = {}) {
-    const pipeline = [
-      { $match: filter },
-      ...this._getReviewLookupStages(),
-    ];
+    const pipeline = [{ $match: filter }];
 
     const meals = await Meal.aggregate(pipeline);
 
@@ -96,7 +95,7 @@ class MealRepository {
 
   async findActiveWithRanking(categoryIds = [], search = "") {
     const objectCategoryIds = categoryIds.map(
-      (id) => new mongoose.Types.ObjectId(id)
+      (id) => new mongoose.Types.ObjectId(id),
     );
 
     const pipeline = [
@@ -129,7 +128,7 @@ class MealRepository {
               { "chef.lastName": { $regex: search, $options: "i" } },
             ],
           },
-        }
+        },
       );
     }
 
@@ -172,4 +171,3 @@ class MealRepository {
 }
 
 module.exports = new MealRepository();
-
