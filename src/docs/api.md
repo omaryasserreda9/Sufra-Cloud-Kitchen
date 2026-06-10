@@ -801,6 +801,55 @@ Toggle the block status of a customer. When a customer is blocked, they will be 
 
 ---
 
+## 13. Contact Module (`/contact`)
+Submit and manage support inquiries and feedback.
+
+### Submit Contact Message
+Submit a new inquiry. Automatically captures the sender's ID and role from the authentication token.
+
+- **URL:** `/contact`
+- **Method:** `POST`
+- **Auth Required:** Yes (Chef or Customer role)
+- **Mandatory Fields:** `fullName`, `email`, `subject`, `message`
+- **Request Body Example:**
+```json
+{
+  "fullName": "John Doe",
+  "email": "john@example.com",
+  "subject": "Question about orders",
+  "message": "Hello, I have a question regarding my recent order..."
+}
+```
+- **Success Response:** Returns the created message with `pending` status.
+
+### Get All Messages (Admin Only)
+Retrieve all contact messages, sorted with pending messages first.
+
+- **URL:** `/contact`
+- **Method:** `GET`
+- **Auth Required:** Yes (Admin role)
+
+### Mark Message as Finished (Admin Only)
+Update the status of a contact message to `finished`.
+
+- **URL:** `/contact/:id/status`
+- **Method:** `PATCH`
+- **Auth Required:** Yes (Admin role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": {
+    "status": "finished",
+    ...
+  },
+  "message": "Contact message marked as finished"
+}
+```
+
+---
+
 ## Common Error Responses
 
 ### 400 Bad Request
