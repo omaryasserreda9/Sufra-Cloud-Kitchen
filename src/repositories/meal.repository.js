@@ -1,20 +1,86 @@
 const Meal = require("../models/Meal");
+const mongoose = require("mongoose");
 
 class MealRepository {
+  _getReviewLookupStages() {
+    return [
+      {
+        $lookup: {
+          from: "reviews",
+          let: { mealId: "$_id" },
+          pipeline: [
+            { $match: { $expr: { $eq: ["$mealId", "$$mealId"] } } },
+            { $sort: { createdAt: -1 } },
+            { $limit: 2 },
+            {
+              $lookup: {
+                from: "customers",
+                localField: "customerId",
+                foreignField: "_id",
+                as: "customer",
+              },
+            },
+            { $unwind: { path: "$customer", preserveNullAndEmptyArrays: true } },
+            {
+              $project: {
+                rating: 1,
+                comment: 1,
+                createdAt: 1,
+                customer: { firstName: 1, lastName: 1 },
+              },
+            },
+          ],
+          as: "recentReviews",
+        },
+      },
+      {
+        $lookup: {
+          from: "reviews",
+          localField: "_id",
+          foreignField: "mealId",
+          as: "allReviews",
+        },
+      },
+      {
+        $addFields: {
+          averageRating: { $ifNull: [{ $avg: "$allReviews.rating" }, 0] },
+        },
+      },
+      { $project: { allReviews: 0 } },
+    ];
+  }
+
   async create(mealData) {
     return await Meal.create(mealData);
   }
 
   async findById(id) {
-    return await Meal.findById(id)
-      .populate("chefId", "firstName lastName kitchenName")
-      .populate("categories");
+    const pipeline = [
+      { $match: { _id: new mongoose.Types.ObjectId(id) } },
+      ...this._getReviewLookupStages(),
+    ];
+
+    const meals = await Meal.aggregate(pipeline);
+    if (meals.length === 0) return null;
+
+    return await Meal.populate(meals[0], [
+      { path: "chefId", select: "firstName lastName kitchenName" },
+      { path: "categories" },
+    ]);
   }
 
   async findAll(filter = {}) {
-    return await Meal.find(filter)
-      .populate("chefId", "firstName lastName kitchenName")
-      .populate("categories");
+    const pipeline = [
+      { $match: filter },
+      ...this._getReviewLookupStages(),
+    ];
+
+    const meals = await Meal.aggregate(pipeline);
+
+    return await Meal.populate(meals, [
+      { path: "chefId", select: "firstName lastName kitchenName" },
+      { path: "categories" },
+    ]);
   }
 
   async update(id, updateData) {
@@ -29,7 +95,6 @@ class MealRepository {
   }
 
   async findActiveWithRanking(categoryIds = [], search = "") {
-    const mongoose = require("mongoose");
     const objectCategoryIds = categoryIds.map(
       (id) => new mongoose.Types.ObjectId(id)
     );
@@ -94,14 +159,11 @@ class MealRepository {
       });
     }
 
+    // Add reviews lookup to active meals as well
+    pipeline.push(...this._getReviewLookupStages());
+
     const meals = await Meal.aggregate(pipeline);
 
-    // Populate chefId and categories since aggregate doesn't do it automatically
-    // If search was used, chefId is already basically populated in 'chef' field, 
-    // but for consistency with existing code, we'll still use populate or re-map.
-    // Actually, Meal.populate will work fine even if chef field is there, 
-    // it will populate the chefId field if it's still present.
-    
     return await Meal.populate(meals, [
       { path: "chefId", select: "firstName lastName kitchenName" },
       { path: "categories" },
@@ -110,3 +172,4 @@ class MealRepository {
 }
 
 module.exports = new MealRepository();
+

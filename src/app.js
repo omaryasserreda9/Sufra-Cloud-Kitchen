@@ -55,6 +55,7 @@ app.use("/api/orders", orderRoutes);
 app.use("/api/settlement", settlementRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
+app.use("/api/reviews", reviewRoutes);
 
 // 404 Handler
 app.use((req, res) => {
