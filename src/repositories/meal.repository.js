@@ -72,9 +72,20 @@ class MealRepository {
   }
 
   async findAll(filter = {}) {
-    return await Meal.find(filter)
-      .populate("chefId", "firstName lastName kitchenName")
-      .populate("categories");
+    const match = { ...filter };
+
+    if (match.chefId) {
+      match.chefId = new mongoose.Types.ObjectId(match.chefId);
+    }
+
+    const pipeline = [{ $match: match }, ...this._getReviewLookupStages()];
+
+    const meals = await Meal.aggregate(pipeline);
+
+    return await Meal.populate(meals, [
+      { path: "chefId", select: "firstName lastName kitchenName" },
+      { path: "categories" },
+    ]);
   }
 
   async update(id, updateData) {
