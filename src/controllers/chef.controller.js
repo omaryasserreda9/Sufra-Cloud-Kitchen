@@ -16,6 +16,19 @@ class ChefController {
     );
   });
 
+  toggleBlock = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    const chef = await chefService.toggleBlock(id);
+
+    res.status(200).json(
+      new ApiResponse(
+        200,
+        chef,
+        `Chef ${chef.isBlocked === 1 ? "blocked" : "unblocked"} successfully`
+      )
+    );
+  });
+
   updateProfile = asyncHandler(async (req, res) => {
     // Assuming the user is updating their own profile
     const chefId = req.user._id;

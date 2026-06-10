@@ -30,6 +30,7 @@ router.get(
   authorize(ROLES.CHEF),
   orderController.getChefOrders,
 );
+
 router.patch(
   "/:id/status",
   authorize(ROLES.CHEF, ROLES.ADMIN),

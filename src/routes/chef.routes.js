@@ -15,6 +15,13 @@ router.patch(
   chefController.toggleVerification,
 );
 
+router.patch(
+  "/:id/toggle-block",
+  authMiddleware,
+  authorize(ROLES.ADMIN),
+  chefController.toggleBlock,
+);
+
 router.put(
   "/profile",
   authMiddleware,

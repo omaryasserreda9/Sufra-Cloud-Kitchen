@@ -17,9 +17,27 @@ class ChefService {
     return updatedChef;
   }
 
+  async toggleBlock(chefId) {
+    const chef = await chefRepository.findById(chefId);
+
+    if (!chef) {
+      throw new ApiError(404, "Chef not found");
+    }
+
+    const isBlocked = chef.isBlocked === 1 ? 0 : 1;
+    const status = isBlocked === 1 ? "blocked" : "active";
+
+    const updatedChef = await chefRepository.update(chefId, {
+      isBlocked,
+      status,
+    });
+
+    return updatedChef;
+  }
+
   async updateProfile(chefId, updateData) {
     // Exclude sensitive fields that should not be changed via this endpoint
-    const { role, status, isVerified, passwordHash, ...allowedData } =
+    const { role, status, isVerified, isBlocked, passwordHash, ...allowedData } =
       updateData;
 
     // If password is being updated, hash it

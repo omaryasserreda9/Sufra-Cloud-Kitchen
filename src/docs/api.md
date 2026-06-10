@@ -185,6 +185,22 @@ Toggle the verification status of a chef.
 }
 ```
 
+### Toggle Block Status (Admin Only)
+Toggle the block status of a chef.
+
+- **URL:** `/chefs/:id/toggle-block`
+- **Method:** `PATCH`
+- **Auth Required:** Yes (Admin role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": { ... },
+  "message": "Chef blocked successfully"
+}
+```
+
 ### Generate AI Kitchen Branding
 Get AI-generated suggestions for kitchen name, slogan, and description.
 
