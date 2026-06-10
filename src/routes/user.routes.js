@@ -18,4 +18,16 @@ router.patch(
   userController.toggleCustomerBlock
 );
 
+/**
+ * @route   GET /api/users/customers
+ * @desc    Get all customers
+ * @access  Private (Admin)
+ */
+router.get(
+  "/customers",
+  authMiddleware,
+  authorize(ROLES.ADMIN),
+  userController.getAllCustomers
+);
+
 module.exports = router;

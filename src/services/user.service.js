@@ -28,6 +28,14 @@ class UserService {
 
     return customer;
   }
+
+  /**
+   * Get all customers.
+   * @returns {Promise<Array>} - List of all customers.
+   */
+  async getAllCustomers() {
+    return await Customer.find().sort({ createdAt: -1 });
+  }
 }
 
 module.exports = new UserService();

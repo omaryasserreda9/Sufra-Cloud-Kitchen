@@ -18,6 +18,17 @@ class UserController {
       )
     );
   });
+
+  /**
+   * Get all customers (Admin only).
+   */
+  getAllCustomers = asyncHandler(async (req, res) => {
+    const customers = await userService.getAllCustomers();
+
+    res.status(200).json(
+      new ApiResponse(200, customers, "All customers retrieved successfully")
+    );
+  });
 }
 
 module.exports = new UserController();

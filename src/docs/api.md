@@ -791,6 +791,32 @@ Submit a review for a meal.
 ## 12. User Module (`/users`)
 Manage user accounts and status (Admin Only for modifications).
 
+### Get All Customers (Admin Only)
+Retrieve a list of all registered customers.
+
+- **URL:** `/users/customers`
+- **Method:** `GET`
+- **Auth Required:** Yes (Admin role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "...",
+      "firstName": "...",
+      "lastName": "...",
+      "email": "...",
+      "isBlocked": 0,
+      "status": "active",
+      ...
+    }
+  ],
+  "message": "All customers retrieved successfully"
+}
+```
+
 ### Toggle Customer Block Status (Admin Only)
 Toggle the block status of a customer. When a customer is blocked, they will be unable to log in or access protected routes.
 
