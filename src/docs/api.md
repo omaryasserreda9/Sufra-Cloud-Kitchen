@@ -772,6 +772,35 @@ Submit a review for a meal.
 
 ---
 
+## 12. User Module (`/users`)
+Manage user accounts and status (Admin Only for modifications).
+
+### Toggle Customer Block Status (Admin Only)
+Toggle the block status of a customer. When a customer is blocked, they will be unable to log in or access protected routes.
+
+- **URL:** `/users/customers/:id/toggle-block`
+- **Method:** `PATCH`
+- **Auth Required:** Yes (Admin role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": {
+    "_id": "...",
+    "firstName": "...",
+    "lastName": "...",
+    "email": "...",
+    "isBlocked": 1,
+    "status": "blocked",
+    ...
+  },
+  "message": "Customer blocked successfully"
+}
+```
+
+---
+
 ## Common Error Responses
 
 ### 400 Bad Request

@@ -82,6 +82,10 @@ class AuthService {
       throw new ApiError(401, "Invalid email or password.");
     }
 
+    if (user.isBlocked === 1) {
+      throw new ApiError(403, "Your account has been blocked.");
+    }
+
     const token = generateToken(user._id, user.role);
 
     const userObject = user.toObject();

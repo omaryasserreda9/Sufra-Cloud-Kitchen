@@ -43,6 +43,10 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
     throw new ApiError(401, "User no longer exists");
   }
 
+  if (user.isBlocked === 1) {
+    throw new ApiError(403, "User is blocked");
+  }
+
   // 5. Attach user info to request
   req.user = user;
   req.user.role = role; // ensure role is always available

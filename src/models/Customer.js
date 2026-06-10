@@ -41,6 +41,10 @@ const customerSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    isBlocked: {
+      type: Number,
+      default: 0,
+    },
   },
   {
     timestamps: true,

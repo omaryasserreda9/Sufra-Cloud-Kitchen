@@ -19,6 +19,7 @@ const settlementRoutes = require("./routes/settlement.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const withdrawalRoutes = require("./routes/withdrawal.routes");
 const reviewRoutes = require("./routes/review.routes");
+const userRoutes = require("./routes/user.routes");
 
 connectDB().catch(console.error);
 
@@ -57,6 +58,7 @@ app.use("/api/settlement", settlementRoutes);
 app.use("/api/payments", paymentRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/reviews", reviewRoutes);
+app.use("/api/users", userRoutes);
 
 // 404 Handler
 app.use((req, res) => {
