@@ -18,6 +18,7 @@ const orderRoutes = require("./routes/order.routes");
 const settlementRoutes = require("./routes/settlement.routes");
 const paymentRoutes = require("./routes/payment.routes");
 const withdrawalRoutes = require("./routes/withdrawal.routes");
+const reviewRoutes = require("./routes/review.routes");
 
 connectDB().catch(console.error);
 

@@ -734,6 +734,44 @@ Automated callback for Paymob transaction confirmation.
 
 ---
 
+## 11. Reviews Module (`/reviews`)
+Manage customer reviews for meals.
+
+### Add Review
+Submit a review for a meal.
+
+- **URL:** `/reviews`
+- **Method:** `POST`
+- **Auth Required:** Yes (Customer role)
+- **Mandatory Fields:** `mealId`, `rating` (1-5), `comment`
+- **Request Body Example:**
+```json
+{
+  "mealId": "mealId123",
+  "rating": 5,
+  "comment": "Delicious food! Highly recommended."
+}
+```
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 201,
+  "data": {
+    "_id": "...",
+    "customerId": "...",
+    "mealId": "...",
+    "chefId": "...",
+    "rating": 5,
+    "comment": "Delicious food! Highly recommended.",
+    "createdAt": "..."
+  },
+  "message": "Review added successfully"
+}
+```
+
+---
+
 ## Common Error Responses
 
 ### 400 Bad Request
