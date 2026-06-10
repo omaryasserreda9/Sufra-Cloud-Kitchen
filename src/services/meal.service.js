@@ -1,10 +1,37 @@
 const mealRepository = require("../repositories/meal.repository");
 const ApiError = require("../utils/ApiError");
 const MEAL_STATUS = require("../constants/mealStatus");
+const { calculateMealCalories } = require("./caloriesCalculator.service");
 
 class MealService {
   async createMeal(chefId, mealData) {
-    return await mealRepository.create({ ...mealData, chefId });
+    const meal = await mealRepository.create({ ...mealData, chefId });
+
+    // Trigger background calorie calculation
+    this._calculateNutritionInBackground(meal._id, mealData.ingredients);
+
+    return meal;
+  }
+
+  _calculateNutritionInBackground(mealId, ingredients) {
+    const ingredientsString = Array.isArray(ingredients)
+      ? ingredients.join(", ")
+      : ingredients;
+
+    // Background process - no await here
+    calculateMealCalories(ingredientsString)
+      .then(async (nutritionData) => {
+        const updateData = {
+          nutrition: {
+            calories: nutritionData.total_calories || nutritionData.calories || 0,
+            otherData: nutritionData,
+          },
+        };
+        await mealRepository.update(mealId, updateData);
+      })
+      .catch((error) => {
+        console.error(`Failed to calculate calories for meal ${mealId}:`, error);
+      });
   }
 
   async getAllMeals(filter = {}) {

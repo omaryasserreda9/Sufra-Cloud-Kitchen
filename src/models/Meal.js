@@ -43,6 +43,10 @@ const mealSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    nutrition: {
+      calories: { type: Number, default: 0 },
+      otherData: { type: mongoose.Schema.Types.Mixed },
+    },
     status: {
       type: String,
       enum: Object.values(MEAL_STATUS),
