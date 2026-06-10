@@ -72,14 +72,9 @@ class MealRepository {
   }
 
   async findAll(filter = {}) {
-    const pipeline = [{ $match: filter }, ...this._getReviewLookupStages()];
-
-    const meals = await Meal.aggregate(pipeline);
-
-    return await Meal.populate(meals, [
-      { path: "chefId", select: "firstName lastName kitchenName" },
-      { path: "categories" },
-    ]);
+    return await Meal.find(filter)
+      .populate("chefId", "firstName lastName kitchenName")
+      .populate("categories");
   }
 
   async update(id, updateData) {
