@@ -18,9 +18,11 @@ class MealService {
       ? ingredients.join(", ")
       : ingredients;
 
+
     // Background process - no await here
     calculateMealCalories(ingredientsString)
       .then(async (nutritionData) => {
+        console.log("nutrotion data", nutritionData);
         const updateData = {
           nutrition: {
             calories: nutritionData.total_calories || nutritionData.calories || 0,
