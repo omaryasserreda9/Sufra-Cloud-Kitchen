@@ -72,7 +72,7 @@ class MealRepository {
   }
 
   async findAll(filter = {}) {
-    const pipeline = [{ $match: filter }];
+    const pipeline = [{ $match: filter }, ...this._getReviewLookupStages()];
 
     const meals = await Meal.aggregate(pipeline);
 
