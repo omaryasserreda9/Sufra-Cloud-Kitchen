@@ -12,6 +12,15 @@ async function generateMealPlan({
   startDate = new Date(),
   days = 7,
 }) {
+  // Simplify available meals to reduce tokens
+  const simplifiedMeals = availableMeals.map(m => ({
+    id: m._id,
+    name: m.name,
+    price: m.price,
+    categories: m.categories.map(c => c.name || c),
+    ingredients: m.ingredients
+  }));
+
   const response = await client.chatCompletion({
     model: "Qwen/Qwen2.5-7B-Instruct",
     messages: [
@@ -24,7 +33,7 @@ You are an expert meal planning assistant. Return ONLY valid JSON with no markdo
       {
         role: "user",
         content: `
-Create a ${days}-day meal plan.
+Create a ${days}-day meal plan using ONLY the provided Meal IDs.
 
 User Preferences:
 ${JSON.stringify(
@@ -41,12 +50,12 @@ ${JSON.stringify(
 Previous Orders:
 ${JSON.stringify(previousOrders, null, 2)}
 
-Available Meals:
-${JSON.stringify(availableMeals, null, 2)}
+Available Meals (Use these IDs):
+${JSON.stringify(simplifiedMeals, null, 2)}
 
 Rules:
-- Use ONLY meals from Available Meals.
-- Never invent meals.
+- Use ONLY IDs from Available Meals.
+- Never invent meals or IDs.
 - Avoid meals containing allergens.
 - Prefer meals matching favoriteCategories.
 - Learn customer preferences from Previous Orders.
@@ -54,23 +63,21 @@ Rules:
 - Use actual dates starting from ${startDate.toISOString().split("T")[0]}.
 - Create exactly ${days} days.
 - Each date must contain meal1, meal2, meal3 ... up to mealsPerDay.
-- Every mealX must be an ARRAY.
-- Each mealX array should contain one or more COMPLETE meal objects from Available Meals.
+- Every mealX must be an ARRAY of Meal IDs (strings).
 - Return ONLY valid JSON.
-- Return each meal images is mandatory
 
 Expected structure example:
 
 {
   "2026-06-11": {
-    "meal1": [{FULL_MEAL_OBJECT}],
-    "meal2": [{FULL_MEAL_OBJECT}],
-    "meal3": [{FULL_MEAL_OBJECT}]
+    "meal1": ["meal_id_123"],
+    "meal2": ["meal_id_456"],
+    "meal3": ["meal_id_789"]
   },
   "2026-06-12": {
-    "meal1": [{FULL_MEAL_OBJECT}],
-    "meal2": [{FULL_MEAL_OBJECT}],
-    "meal3": [{FULL_MEAL_OBJECT}]
+    "meal1": ["meal_id_abc"],
+    "meal2": ["meal_id_def"],
+    "meal3": ["meal_id_ghi"]
   }
 }
 `,

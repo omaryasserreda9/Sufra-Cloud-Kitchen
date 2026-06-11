@@ -78,7 +78,7 @@ const getMealPlan = async (customerId, { weeklyBudget, mealsPerDay, favoriteCate
       .map(([id]) => ({ id, name: categoryInfo[id] }))
   };
 
-  // 4. Generate meal plan using AI agent
+  // 4. Generate meal plan using AI agent (returns IDs)
   const rawMealPlan = await generateMealPlan({
     weeklyBudget,
     mealsPerDay,
@@ -88,41 +88,42 @@ const getMealPlan = async (customerId, { weeklyBudget, mealsPerDay, favoriteCate
     availableMeals: filteredMeals
   });
 
-  // 5. Validation and formatting
-  const availableMealIds = new Set(filteredMeals.map(m => m._id.toString()));
+  // 5. Populate and validate
+  const availableMealsMap = new Map(filteredMeals.map(m => [m._id.toString(), m]));
   const validatedPlan = {};
 
   for (const date in rawMealPlan) {
     validatedPlan[date] = {};
     for (let i = 1; i <= mealsPerDay; i++) {
       const mealKey = `meal${i}`;
-      const mealsInSlot = rawMealPlan[date][mealKey];
+      const mealIdsInSlot = rawMealPlan[date][mealKey];
       
-      if (!Array.isArray(mealsInSlot)) {
+      if (!Array.isArray(mealIdsInSlot)) {
          validatedPlan[date][mealKey] = [];
          continue;
       }
 
-      const validMeals = mealsInSlot.filter(m => {
-        const mId = m._id ? m._id.toString() : null;
-        if (!mId || !availableMealIds.has(mId)) return false;
+      const validMeals = mealIdsInSlot
+        .map(id => availableMealsMap.get(id?.toString()))
+        .filter(m => {
+          if (!m) return false;
 
-        // Extra safety check for allergens
-        if (allergies && allergies.length > 0) {
-           const allergyLower = allergies.map(a => a.toLowerCase());
-           const ingredients = (m.ingredients || []).map(ing => ing.toLowerCase());
-           const description = (m.description || "").toLowerCase();
-           const name = (m.name || "").toLowerCase();
-           
-           const hasAllergy = allergyLower.some(allergy => 
-             ingredients.some(ing => ing.includes(allergy)) || 
-             description.includes(allergy) ||
-             name.includes(allergy)
-           );
-           if (hasAllergy) return false;
-        }
-        return true;
-      });
+          // Extra safety check for allergens
+          if (allergies && allergies.length > 0) {
+             const allergyLower = allergies.map(a => a.toLowerCase());
+             const ingredients = (m.ingredients || []).map(ing => ing.toLowerCase());
+             const description = (m.description || "").toLowerCase();
+             const name = (m.name || "").toLowerCase();
+             
+             const hasAllergy = allergyLower.some(allergy => 
+               ingredients.some(ing => ing.includes(allergy)) || 
+               description.includes(allergy) ||
+               name.includes(allergy)
+             );
+             if (hasAllergy) return false;
+          }
+          return true;
+        });
 
       validatedPlan[date][mealKey] = validMeals;
     }
