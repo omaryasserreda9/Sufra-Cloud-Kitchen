@@ -892,6 +892,45 @@ Update the status of a contact message to `finished`.
 
 ---
 
+## 14. Meal Planning Module (`/meal-planning`)
+AI-powered meal planning based on user preferences and history.
+
+### Generate 7-Day Meal Plan
+Creates a personalized 7-day meal plan based on budget, daily meal frequency, favorite categories, and allergies. The AI analyzes previous orders to learn preferences.
+
+- **URL:** `/meal-planning/generate`
+- **Method:** `POST`
+- **Auth Required:** Yes (Customer role)
+- **Mandatory Fields:** `weeklyBudget`, `mealsPerDay`, `favoriteCategories` (Array of IDs)
+- **Optional Fields:** `allergies` (Array of strings)
+- **Request Body Example:**
+```json
+{
+  "weeklyBudget": 1000,
+  "mealsPerDay": 3,
+  "favoriteCategories": ["cat_id_1", "cat_id_2"],
+  "allergies": ["peanut", "dairy"]
+}
+```
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": {
+    "2026-06-11": {
+      "meal1": [ { "FULL_MEAL_OBJECT" } ],
+      "meal2": [ { "FULL_MEAL_OBJECT" } ],
+      "meal3": [ { "FULL_MEAL_OBJECT" } ]
+    },
+    ... (for 7 days)
+  },
+  "message": "Meal plan generated successfully"
+}
+```
+
+---
+
 ## Common Error Responses
 
 ### 400 Bad Request

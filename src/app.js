@@ -21,6 +21,7 @@ const withdrawalRoutes = require("./routes/withdrawal.routes");
 const reviewRoutes = require("./routes/review.routes");
 const userRoutes = require("./routes/user.routes");
 const contactRoutes = require("./routes/contact.routes");
+const mealPlanningRoutes = require("./routes/mealPlanning.routes");
 
 connectDB().catch(console.error);
 
@@ -60,6 +61,7 @@ app.use("/api/payments", paymentRoutes);
 app.use("/api/withdrawals", withdrawalRoutes);
 app.use("/api/reviews", reviewRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/meal-planning", mealPlanningRoutes);
 
 // 404 Handler
 app.use((req, res) => {
