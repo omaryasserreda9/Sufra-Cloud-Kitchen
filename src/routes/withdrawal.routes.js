@@ -1,6 +1,6 @@
 const express = require("express");
 const withdrawalController = require("../controllers/withdrawal.controller");
-const authMiddleware = require("../middlewares/auth.middleware");
+const { authMiddleware } = require("../middlewares/auth.middleware");
 const authorize = require("../middlewares/role.middleware");
 const ROLES = require("../constants/roles");
 

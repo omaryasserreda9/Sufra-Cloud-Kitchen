@@ -56,4 +56,39 @@ const authMiddleware = asyncHandler(async (req, res, next) => {
   next();
 });
 
-module.exports = authMiddleware;
+const optionalAuth = asyncHandler(async (req, res, next) => {
+  let token;
+
+  if (
+    req.headers.authorization &&
+    req.headers.authorization.startsWith("Bearer ")
+  ) {
+    token = req.headers.authorization.split(" ")[1];
+  }
+
+  if (!token) {
+    return next();
+  }
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const userId = decoded.userId || decoded._id;
+    const role = decoded.role;
+
+    if (userId && role) {
+      const Model = getModelByRole(role);
+      const user = await Model.findById(userId);
+
+      if (user && user.isBlocked !== 1) {
+        req.user = user;
+        req.user.role = role;
+      }
+    }
+  } catch (error) {
+    console.log("Optional auth failed:", error.message);
+  }
+
+  next();
+});
+
+module.exports = { authMiddleware, optionalAuth };

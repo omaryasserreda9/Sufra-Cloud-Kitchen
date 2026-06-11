@@ -1,6 +1,6 @@
 const express = require("express");
 const mealController = require("../controllers/meal.controller");
-const authMiddleware = require("../middlewares/auth.middleware");
+const { authMiddleware } = require("../middlewares/auth.middleware");
 const authorize = require("../middlewares/role.middleware");
 const upload = require("../middlewares/upload.middleware");
 const ROLES = require("../constants/roles");

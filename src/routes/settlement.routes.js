@@ -1,6 +1,6 @@
 const express = require("express");
 const settlementController = require("../controllers/settlement.controller");
-const authMiddleware = require("../middlewares/auth.middleware");
+const { authMiddleware } = require("../middlewares/auth.middleware");
 const authorize = require("../middlewares/role.middleware");
 const ROLES = require("../constants/roles");
 

@@ -7,8 +7,8 @@ class ContactController {
    * Submit a contact message (Chef or Customer).
    */
   submitMessage = asyncHandler(async (req, res) => {
-    const senderId = req.user._id;
-    const senderRole = req.user.role;
+    const senderId = req.user ? req.user._id : null;
+    const senderRole = req.user ? req.user.role : "guest";
     
     const message = await contactService.submitMessage(senderId, senderRole, req.body);
 

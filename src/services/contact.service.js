@@ -8,8 +8,10 @@ class ContactService {
   async submitMessage(senderId, senderRole, messageData) {
     const { fullName, email, subject, message } = messageData;
 
-    // Determine the model name for refPath
-    const senderRoleModel = senderRole.charAt(0).toUpperCase() + senderRole.slice(1);
+    // Determine the model name for refPath (null for guests)
+    const senderRoleModel = senderRole !== "guest" 
+      ? senderRole.charAt(0).toUpperCase() + senderRole.slice(1)
+      : null;
 
     const contactMessage = await ContactMessage.create({
       senderId,

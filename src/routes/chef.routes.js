@@ -1,7 +1,7 @@
 const express = require("express");
 const chefController = require("../controllers/chef.controller");
 const brandingController = require("../controllers/branding.controller");
-const authMiddleware = require("../middlewares/auth.middleware");
+const { authMiddleware } = require("../middlewares/auth.middleware");
 const authorize = require("../middlewares/role.middleware");
 const validateRequest = require("../middlewares/validate.middleware");
 const ROLES = require("../constants/roles");

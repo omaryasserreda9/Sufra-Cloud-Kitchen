@@ -4,17 +4,17 @@ const contactMessageSchema = new mongoose.Schema(
   {
     senderId: {
       type: mongoose.Schema.Types.ObjectId,
-      required: true,
+      required: false,
       refPath: "senderRoleModel",
     },
     senderRole: {
       type: String,
       required: true,
-      enum: ["customer", "chef"],
+      enum: ["customer", "chef", "guest"],
     },
     senderRoleModel: {
       type: String,
-      required: true,
+      required: false,
       enum: ["Customer", "Chef"],
     },
     fullName: {

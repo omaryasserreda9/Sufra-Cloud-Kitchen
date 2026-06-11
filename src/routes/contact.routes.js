@@ -1,6 +1,6 @@
 const express = require("express");
 const contactController = require("../controllers/contact.controller");
-const authMiddleware = require("../middlewares/auth.middleware");
+const { authMiddleware, optionalAuth } = require("../middlewares/auth.middleware");
 const authorize = require("../middlewares/role.middleware");
 const ROLES = require("../constants/roles");
 
@@ -9,12 +9,11 @@ const router = express.Router();
 /**
  * @route   POST /api/contact
  * @desc    Submit a contact message
- * @access  Private (Chef, Customer)
+ * @access  Public (Guest, Chef, Customer)
  */
 router.post(
   "/",
-  authMiddleware,
-  authorize(ROLES.CHEF, ROLES.CUSTOMER),
+  optionalAuth,
   contactController.submitMessage
 );
 
