@@ -8,18 +8,33 @@ class MealPlanningController {
    */
   getMealPlan = asyncHandler(async (req, res) => {
     const customerId = req.user._id;
-    const { weeklyBudget, mealsPerDay, favoriteCategories, allergies } = req.body;
+    const { weeklyBudget, mealsPerDay, favoriteCategories, allergies } =
+      req.body;
+
+    if (
+      !weeklyBudget ||
+      !mealsPerDay ||
+      !favoriteCategories ||
+      !Array.isArray(favoriteCategories) ||
+      favoriteCategories.length === 0
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "weeklyBudget, mealsPerDay and favoriteCategories are required",
+      });
+    }
 
     const mealPlan = await mealPlanningService.getMealPlan(customerId, {
       weeklyBudget,
       mealsPerDay,
       favoriteCategories,
-      allergies
+      allergies,
     });
 
-    res.status(200).json(
-      new ApiResponse(200, mealPlan, "Meal plan generated successfully")
-    );
+    res
+      .status(200)
+      .json(new ApiResponse(200, mealPlan, "Meal plan generated successfully"));
   });
 }
 
