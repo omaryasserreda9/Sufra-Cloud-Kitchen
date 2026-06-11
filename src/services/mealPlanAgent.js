@@ -55,7 +55,7 @@ Rules:
 - Create exactly ${days} days.
 - Each date must contain meal1, meal2, meal3 ... up to mealsPerDay.
 - Every mealX must be an ARRAY.
-- Each mealX array may contain one or more COMPLETE meal objects from Available Meals.
+- Each mealX array should contain one or more COMPLETE meal objects from Available Meals.
 - Return ONLY valid JSON.
 
 Expected structure example:
