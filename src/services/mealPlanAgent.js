@@ -57,6 +57,7 @@ Rules:
 - Every mealX must be an ARRAY.
 - Each mealX array should contain one or more COMPLETE meal objects from Available Meals.
 - Return ONLY valid JSON.
+- Return each meal images is mandatory
 
 Expected structure example:
 
