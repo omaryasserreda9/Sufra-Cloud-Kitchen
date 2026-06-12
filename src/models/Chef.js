@@ -21,7 +21,6 @@ const chefSchema = new mongoose.Schema(
     },
     passwordHash: {
       type: String,
-      required: true,
       select: false,
     },
     phone: {
@@ -57,6 +56,11 @@ const chefSchema = new mongoose.Schema(
     isBlocked: {
       type: Number,
       default: 0,
+    },
+    authProvider: {
+      type: String,
+      enum: ["local", "google"],
+      default: "local",
     },
   },
   {

@@ -3,6 +3,7 @@ const { getModelByRole } = require("../utils/modelResolver");
 const generateToken = require("../utils/generateToken");
 const ApiError = require("../utils/ApiError");
 const connectDB = require("../config/database");
+const googleClient = require("../config/google");
 
 class AuthService {
   /**
@@ -110,6 +111,57 @@ class AuthService {
       throw new ApiError(404, "User not found.");
     }
     return user;
+  }
+
+  async googleLogin(idToken, role) {
+    if (!role) {
+      throw new ApiError(400, "Role is required");
+    }
+
+    const ticket = await googleClient.verifyIdToken({
+      idToken,
+      audience: process.env.GOOGLE_CLIENT_ID,
+    });
+
+    const payload = ticket.getPayload();
+
+    const { email, given_name, family_name, picture } = payload;
+
+    const Model = getModelByRole(role);
+
+    let user = await Model.findOne({ email });
+
+    // Create user if not found
+    if (!user) {
+      user = await Model.create({
+        firstName: given_name,
+        lastName: family_name,
+        email,
+        role,
+        authProvider: "google",
+      });
+
+      // Create wallet for chef
+      if (role === "chef") {
+        const settlementService = require("./settlement.service");
+        await settlementService.getChefWallet(user._id);
+      }
+    }
+
+    if (user.isBlocked === 1) {
+      throw new ApiError(403, "Your account has been blocked.");
+    }
+
+    const token = generateToken(user._id, user.role);
+
+    const userObject = user.toObject();
+
+    delete userObject.passwordHash;
+
+    return {
+      user: userObject,
+      token,
+    };
   }
 }
 

@@ -9,12 +9,14 @@ router.get("/me", authMiddleware, authController.me);
 router.post(
   "/register",
   validateRequest(["email", "password", "role", "firstName", "lastName"]),
-  authController.register
+  authController.register,
 );
 router.post(
   "/login",
   validateRequest(["email", "password", "role"]),
-  authController.login
+  authController.login,
 );
+
+router.post("/google", authController.googleLogin);
 
 module.exports = router;
