@@ -3,6 +3,9 @@ const ChefWallet = require("../models/ChefWallet");
 const { WITHDRAWAL_STATUS } = require("../constants/withdrawalStatus");
 const ApiError = require("../utils/ApiError");
 const mongoose = require("mongoose");
+const Chef = require("../models/Chef");
+const notificationService = require("./notification.service");
+const { notificationPresets } = require("../constants/notificationPresets");
 
 class WithdrawalService {
   /**
@@ -18,11 +21,29 @@ class WithdrawalService {
     // If we lock it, we'd deduct it now and refund if rejected.
     // For simplicity, we check balance now, and check again during approval.
     
-    return await ChefWithdrawal.create({
+    const withdrawal = await ChefWithdrawal.create({
       chefId,
       amount,
       notes,
     });
+
+    const chef = await Chef.findById(chefId).select("firstName lastName kitchenName").lean();
+    const chefName =
+      chef?.kitchenName || `${chef?.firstName || ""} ${chef?.lastName || ""}`.trim() || "A chef";
+
+    await notificationService.notifyAdmins({
+      ...notificationPresets.adminWithdrawalRequest({
+        chefName,
+        amount,
+        withdrawalId: withdrawal._id,
+      }),
+      entityType: "ChefWithdrawal",
+      entityId: withdrawal._id,
+      deduplicationKey: `withdrawal-request:${withdrawal._id}`,
+      metadata: { chefId },
+    });
+
+    return withdrawal;
   }
 
   /**
@@ -56,6 +77,18 @@ class WithdrawalService {
       await withdrawal.save({ session });
 
       await session.commitTransaction();
+
+      await notificationService.notifyChef(withdrawal.chefId, {
+        ...notificationPresets.chefWithdrawalUpdated({
+          status: WITHDRAWAL_STATUS.APPROVED,
+          amount: withdrawal.amount,
+          withdrawalId: withdrawal._id,
+        }),
+        entityType: "ChefWithdrawal",
+        entityId: withdrawal._id,
+        deduplicationKey: `withdrawal-status:${withdrawal._id}:${WITHDRAWAL_STATUS.APPROVED}`,
+      });
+
       return withdrawal;
     } catch (error) {
       await session.abortTransaction();
@@ -80,7 +113,20 @@ class WithdrawalService {
     withdrawal.processedAt = new Date();
     if (notes) withdrawal.notes = (withdrawal.notes ? withdrawal.notes + " | " : "") + notes;
     
-    return await withdrawal.save();
+    await withdrawal.save();
+
+    await notificationService.notifyChef(withdrawal.chefId, {
+      ...notificationPresets.chefWithdrawalUpdated({
+        status: WITHDRAWAL_STATUS.REJECTED,
+        amount: withdrawal.amount,
+        withdrawalId: withdrawal._id,
+      }),
+      entityType: "ChefWithdrawal",
+      entityId: withdrawal._id,
+      deduplicationKey: `withdrawal-status:${withdrawal._id}:${WITHDRAWAL_STATUS.REJECTED}`,
+    });
+
+    return withdrawal;
   }
 
   /**

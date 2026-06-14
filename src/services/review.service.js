@@ -2,6 +2,8 @@ const Review = require("../models/Review");
 const Meal = require("../models/Meal");
 const ApiError = require("../utils/ApiError");
 const { analyzeComment } = require("./sentiment.service");
+const notificationService = require("./notification.service");
+const { notificationPresets } = require("../constants/notificationPresets");
 
 class ReviewService {
   async addReview(customerId, reviewData) {
@@ -34,6 +36,18 @@ class ReviewService {
       chefId: meal.chefId,
       rating,
       comment
+    });
+
+    await notificationService.notifyChef(meal.chefId, {
+      ...notificationPresets.chefMealReview({
+        mealName: meal.name,
+        rating,
+        reviewId: review._id,
+      }),
+      entityType: "Review",
+      entityId: review._id,
+      deduplicationKey: `meal-review:${review._id}`,
+      metadata: { mealId },
     });
 
     return review;

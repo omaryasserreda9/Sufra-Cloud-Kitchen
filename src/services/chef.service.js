@@ -1,6 +1,8 @@
 const chefRepository = require("../repositories/chef.repository");
 const ApiError = require("../utils/ApiError");
 const bcrypt = require("bcryptjs");
+const notificationService = require("./notification.service");
+const { notificationPresets } = require("../constants/notificationPresets");
 
 class ChefService {
   async toggleVerification(chefId) {
@@ -12,6 +14,16 @@ class ChefService {
 
     const updatedChef = await chefRepository.update(chefId, {
       isVerified: !chef.isVerified,
+    });
+
+    await notificationService.notifyChef(chefId, {
+      ...notificationPresets.chefVerificationUpdated({
+        status: updatedChef.isVerified ? "approved" : "revoked",
+        requestId: chefId,
+      }),
+      entityType: "Chef",
+      entityId: chefId,
+      deduplicationKey: `chef-verification-toggle:${chefId}:${updatedChef.updatedAt.getTime()}`,
     });
 
     return updatedChef;
@@ -30,6 +42,13 @@ class ChefService {
     const updatedChef = await chefRepository.update(chefId, {
       isBlocked,
       status,
+    });
+
+    await notificationService.notifyChef(chefId, {
+      ...notificationPresets.chefAccountStatusUpdated({ status }),
+      entityType: "Chef",
+      entityId: chefId,
+      deduplicationKey: `chef-account-status:${chefId}:${updatedChef.updatedAt.getTime()}`,
     });
 
     return updatedChef;
