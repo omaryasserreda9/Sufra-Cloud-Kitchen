@@ -11,14 +11,14 @@ Welcome to the Cloud Kitchen Backend API documentation. This project provides a 
 Handles user registration, login, and session retrieval.
 
 ### Register User
-Create a new account (Chef, Customer, or Admin).
+Create a new account (Chef, Customer, or Admin). Public registration for the `delivery` role is disabled.
 
 - **URL:** `/auth/register`
 - **Method:** `POST`
 - **Auth Required:** No
 - **Mandatory Fields:** `email`, `password`, `role`, `firstName`, `lastName`
 - **Optional Fields:** `phone`
-- **Roles:** `customer`, `chef`, `admin`, `delivery`
+- **Roles:** `customer`, `chef`, `admin`
 - **Request Body Example:**
 ```json
 {
@@ -649,7 +649,7 @@ Change the status of an order.
 - **URL:** `/orders/:id/status`
 - **Method:** `PATCH`
 - **Auth Required:** Yes (Chef or Admin role)
-- **Mandatory Fields:** `status` (`awaiting_payment`, `preparing`, `out_for_delivery`, `completed`)
+- **Mandatory Fields:** `status` (`awaiting_payment`, `preparing`, `out_for_delivery`, `delivered`, `completed`)
 
 ### Update Order Item Status
 Change the status of a specific item in an order.
@@ -701,7 +701,7 @@ Submit a request to withdraw funds from the wallet.
 - **URL:** `/withdrawals/request`
 - **Method:** `POST`
 - **Auth Required:** Yes (Chef role)
-- **Mandatory Fields:** `amount`
+- **Mandatory Fields:** `amount` - The amount to withdraw.
 - **Optional Fields:** `notes`
 
 ### Get Withdrawal History (Chef)
@@ -809,8 +809,7 @@ Retrieve a list of all registered customers.
       "lastName": "...",
       "email": "...",
       "isBlocked": 0,
-      "status": "active",
-      ...
+      "status": "active"
     }
   ],
   "message": "All customers retrieved successfully"
@@ -829,13 +828,8 @@ Toggle the block status of a customer. When a customer is blocked, they will be 
   "success": true,
   "statusCode": 200,
   "data": {
-    "_id": "...",
-    "firstName": "...",
-    "lastName": "...",
-    "email": "...",
     "isBlocked": 1,
-    "status": "blocked",
-    ...
+    "status": "blocked"
   },
   "message": "Customer blocked successfully"
 }
@@ -877,8 +871,7 @@ Retrieve a list of all registered delivery personnel.
       "email": "...",
       "phone": "...",
       "isFree": true,
-      "status": "active",
-      ...
+      "status": "active"
     }
   ],
   "message": "All delivery personnel retrieved successfully"
@@ -943,8 +936,7 @@ Update the status of a contact message to `finished`.
   "success": true,
   "statusCode": 200,
   "data": {
-    "status": "finished",
-    ...
+    "status": "finished"
   },
   "message": "Contact message marked as finished"
 }
@@ -978,12 +970,11 @@ Creates a personalized 7-day meal plan based on budget, daily meal frequency, fa
   "success": true,
   "statusCode": 200,
   "data": {
-    "2026-06-11": {
-      "meal1": [ { "FULL_MEAL_OBJECT" } ],
-      "meal2": [ { "FULL_MEAL_OBJECT" } ],
-      "meal3": [ { "FULL_MEAL_OBJECT" } ]
-    },
-    ... (for 7 days)
+    "2026-06-14": {
+      "meal1": [ { ... } ],
+      "meal2": [ { ... } ],
+      "meal3": [ { ... } ]
+    }
   },
   "message": "Meal plan generated successfully"
 }
@@ -1026,7 +1017,7 @@ Retrieve a list of all completed orders assigned to the delivery person.
 - **Auth Required:** Yes (Delivery role)
 
 ### Complete Order
-Mark an assigned order as completed. This action triggers chef earnings distribution and releases the delivery person.
+Mark an assigned order as completed. This action triggers chef earnings distribution, applies platform commissions, and releases the delivery person.
 
 - **URL:** `/delivery/orders/:orderId/complete`
 - **Method:** `POST`
