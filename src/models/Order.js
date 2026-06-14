@@ -89,6 +89,10 @@ const orderSchema = new mongoose.Schema(
 
 // Auto-calculate order status based on items
 orderSchema.pre("save", function (next) {
+  if (this.status === ORDER_STATUS.COMPLETED) {
+    return;
+  }
+
   const items = Array.isArray(this.items) ? this.items : [];
 
   const itemStatuses = items.map(

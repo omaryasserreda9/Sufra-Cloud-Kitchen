@@ -4,7 +4,7 @@ const asyncHandler = require("../utils/asyncHandler");
 
 class OrderController {
   checkout = asyncHandler(async (req, res) => {
-    const customer = req.user;
+    let customer = req.user;
     const checkoutData = req.body;
 
     const order = await orderService.checkout(customer, checkoutData);
