@@ -1034,6 +1034,66 @@ Mark an assigned order as completed. This action triggers chef earnings distribu
 
 ---
 
+## 16. Notifications Module (`/notifications`)
+Durable in-app notifications for admin and chef accounts. Notifications are typed,
+prioritized, deduplicated per recipient, and automatically expire after 90 days.
+
+### Notification Events
+
+- **Admin:** chef verification submissions, contact messages/complaints, and withdrawal requests.
+- **Chef:** new paid or cash orders, meal reviews, verification/account status changes, and withdrawal decisions.
+
+### List Notifications
+
+- **URL:** `/notifications`
+- **Method:** `GET`
+- **Auth Required:** Yes (Admin or Chef role)
+- **Query Params (Optional):** `page`, `limit` (maximum 100), `unread=true`, `type`
+
+### Get Unread Count
+
+- **URL:** `/notifications/unread-count`
+- **Method:** `GET`
+- **Auth Required:** Yes (Admin or Chef role)
+
+### Mark One Notification as Read
+
+- **URL:** `/notifications/:id/read`
+- **Method:** `PATCH`
+- **Auth Required:** Yes (Admin or Chef role; notification owner only)
+
+### Mark All Notifications as Read
+
+- **URL:** `/notifications/read-all`
+- **Method:** `PATCH`
+- **Auth Required:** Yes (Admin or Chef role)
+
+### Delete Notification
+
+- **URL:** `/notifications/:id`
+- **Method:** `DELETE`
+- **Auth Required:** Yes (Admin or Chef role; notification owner only)
+
+### Notification Shape
+
+```json
+{
+  "_id": "...",
+  "type": "chef.order.requested",
+  "priority": "urgent",
+  "title": "New customer order",
+  "body": "You received 2 meal requests worth 350 EGP.",
+  "actionPath": "/chef/orders/...",
+  "entityType": "Order",
+  "entityId": "...",
+  "metadata": {},
+  "readAt": null,
+  "createdAt": "..."
+}
+```
+
+---
+
 ## Common Error Responses
 
 ### 400 Bad Request

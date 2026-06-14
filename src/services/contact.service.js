@@ -1,5 +1,7 @@
 const ContactMessage = require("../models/ContactMessage");
 const ApiError = require("../utils/ApiError");
+const notificationService = require("./notification.service");
+const { notificationPresets } = require("../constants/notificationPresets");
 
 class ContactService {
   /**
@@ -21,6 +23,18 @@ class ContactService {
       email,
       subject,
       message,
+    });
+
+    await notificationService.notifyAdmins({
+      ...notificationPresets.adminContactMessage({
+        senderName: fullName,
+        subject,
+        messageId: contactMessage._id,
+      }),
+      entityType: "ContactMessage",
+      entityId: contactMessage._id,
+      deduplicationKey: `contact-message:${contactMessage._id}`,
+      metadata: { senderRole },
     });
 
     return contactMessage;
