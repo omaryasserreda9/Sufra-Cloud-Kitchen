@@ -40,6 +40,29 @@ class UserService {
   }
 
   /**
+   * Get all delivery personnel.
+   * @returns {Promise<Array>} - List of all delivery users.
+   */
+  async getAllDeliveries() {
+    return await Delivery.find().sort({ createdAt: -1 });
+  }
+
+  /**
+   * Delete a delivery user.
+   * @param {string} deliveryId - ID of the delivery user to delete.
+   * @returns {Promise<Object>} - The deleted delivery user document.
+   */
+  async deleteDelivery(deliveryId) {
+    const delivery = await Delivery.findByIdAndDelete(deliveryId);
+
+    if (!delivery) {
+      throw new ApiError(404, "Delivery user not found");
+    }
+
+    return delivery;
+  }
+
+  /**
    * Create a new delivery user.
    * @param {Object} deliveryData - Data for the new delivery user.
    * @returns {Promise<Object>} - The created delivery user.

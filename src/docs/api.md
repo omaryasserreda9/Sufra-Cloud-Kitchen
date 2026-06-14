@@ -858,6 +858,49 @@ Create a new delivery personnel account. Public registration for this role is di
 }
 ```
 
+### Get All Delivery Users (Admin Only)
+Retrieve a list of all registered delivery personnel.
+
+- **URL:** `/users/delivery`
+- **Method:** `GET`
+- **Auth Required:** Yes (Admin role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": [
+    {
+      "_id": "...",
+      "firstName": "...",
+      "lastName": "...",
+      "email": "...",
+      "phone": "...",
+      "isFree": true,
+      "status": "active",
+      ...
+    }
+  ],
+  "message": "All delivery personnel retrieved successfully"
+}
+```
+
+### Delete Delivery User (Admin Only)
+Remove a delivery personnel account from the system.
+
+- **URL:** `/users/delivery/:id`
+- **Method:** `DELETE`
+- **Auth Required:** Yes (Admin role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": null,
+  "message": "Delivery user deleted successfully"
+}
+```
+
 ---
 
 ## 13. Contact Module (`/contact`)

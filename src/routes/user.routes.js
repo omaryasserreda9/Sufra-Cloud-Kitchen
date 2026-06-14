@@ -32,6 +32,30 @@ router.get(
 );
 
 /**
+ * @route   GET /api/users/delivery
+ * @desc    Get all delivery personnel
+ * @access  Private (Admin)
+ */
+router.get(
+  "/delivery",
+  authMiddleware,
+  authorize(ROLES.ADMIN),
+  userController.getAllDeliveries
+);
+
+/**
+ * @route   DELETE /api/users/delivery/:id
+ * @desc    Delete a delivery user
+ * @access  Private (Admin)
+ */
+router.delete(
+  "/delivery/:id",
+  authMiddleware,
+  authorize(ROLES.ADMIN),
+  userController.deleteDelivery
+);
+
+/**
  * @route   POST /api/users/delivery
  * @desc    Create a new delivery user
  * @access  Private (Admin)

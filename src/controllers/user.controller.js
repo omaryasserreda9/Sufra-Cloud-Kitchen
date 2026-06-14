@@ -31,6 +31,29 @@ class UserController {
   });
 
   /**
+   * Get all delivery personnel (Admin only).
+   */
+  getAllDeliveries = asyncHandler(async (req, res) => {
+    const deliveries = await userService.getAllDeliveries();
+
+    res.status(200).json(
+      new ApiResponse(200, deliveries, "All delivery personnel retrieved successfully")
+    );
+  });
+
+  /**
+   * Delete a delivery user (Admin only).
+   */
+  deleteDelivery = asyncHandler(async (req, res) => {
+    const { id } = req.params;
+    await userService.deleteDelivery(id);
+
+    res.status(200).json(
+      new ApiResponse(200, null, "Delivery user deleted successfully")
+    );
+  });
+
+  /**
    * Create a new delivery user (Admin only).
    */
   createDelivery = asyncHandler(async (req, res) => {
