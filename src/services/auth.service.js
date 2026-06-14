@@ -4,6 +4,8 @@ const generateToken = require("../utils/generateToken");
 const ApiError = require("../utils/ApiError");
 const connectDB = require("../config/database");
 const googleClient = require("../config/google");
+const crypto = require("crypto");
+const sendEmail = require("../utils/sendEmail");
 
 class AuthService {
   /**
@@ -161,6 +163,72 @@ class AuthService {
     return {
       user: userObject,
       token,
+    };
+  }
+
+  async forgotPassword(email, role) {
+    const Model = getModelByRole(role);
+
+    if (!Model) {
+      throw new ApiError(400, "Invalid role");
+    }
+
+    const user = await Model.findOne({ email });
+
+    if (!user) {
+      throw new ApiError(404, "No user found with this email");
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
+
+    const hashedOTP = crypto.createHash("sha256").update(otp).digest("hex");
+
+    user.resetPasswordOTP = hashedOTP;
+    user.resetPasswordExpire = Date.now() + 15 * 60 * 1000;
+
+    await user.save();
+
+    await sendEmail(
+      user.email,
+      "Reset Password",
+      `Your OTP is ${otp}. It is valid for 15 minutes.`,
+    );
+
+    return {
+      message: "OTP sent successfully",
+    };
+  }
+
+  async resetPassword(email, role, otp, newPassword) {
+    const Model = getModelByRole(role);
+
+    if (!Model) {
+      throw new ApiError(400, "Invalid role");
+    }
+
+    const hashedOTP = crypto.createHash("sha256").update(otp).digest("hex");
+
+    const user = await Model.findOne({
+      email,
+      resetPasswordOTP: hashedOTP,
+      resetPasswordExpire: {
+        $gt: Date.now(),
+      },
+    });
+
+    if (!user) {
+      throw new ApiError(400, "Invalid or expired OTP");
+    }
+
+    user.passwordHash = await bcrypt.hash(newPassword, 10);
+
+    user.resetPasswordOTP = undefined;
+    user.resetPasswordExpire = undefined;
+
+    await user.save();
+
+    return {
+      message: "Password reset successfully",
     };
   }
 }

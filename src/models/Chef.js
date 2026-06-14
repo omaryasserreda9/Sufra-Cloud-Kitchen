@@ -61,6 +61,13 @@ const chefSchema = new mongoose.Schema(
       enum: ["local", "google"],
       default: "local",
     },
+    resetPasswordOTP: {
+      type: String,
+    },
+
+    resetPasswordExpire: {
+      type: Date,
+    },
   },
   {
     timestamps: true,

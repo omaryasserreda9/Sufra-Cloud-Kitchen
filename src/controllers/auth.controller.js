@@ -38,6 +38,30 @@ class AuthController {
       .status(200)
       .json(new ApiResponse(200, user, "Current user retrieved successfully"));
   });
+
+  forgotPassword = asyncHandler(async (req, res) => {
+    const { email, role } = req.body;
+
+    const result = await authService.forgotPassword(email, role);
+
+    res.status(200).json(new ApiResponse(200, result, "OTP sent successfully"));
+  });
+
+  resetPassword = asyncHandler(async (req, res) => {
+    console.log(req.body);
+    const { email, role, otp, newPassword } = req.body;
+
+    const result = await authService.resetPassword(
+      email,
+      role,
+      otp,
+      newPassword,
+    );
+
+    res
+      .status(200)
+      .json(new ApiResponse(200, result, "Password reset successfully"));
+  });
 }
 
 module.exports = new AuthController();
