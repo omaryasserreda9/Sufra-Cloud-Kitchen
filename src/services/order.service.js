@@ -3,6 +3,8 @@ const Order = require("../models/Order");
 const cartService = require("./cart.service");
 const ApiError = require("../utils/ApiError");
 const ORDER_STATUS = require("../constants/orderStatus");
+const notificationService = require("./notification.service");
+const { notificationPresets } = require("../constants/notificationPresets");
 
 class OrderService {
   async checkout(customer, checkoutData) {
@@ -67,6 +69,10 @@ class OrderService {
     // 5. Clear Cart
     await cartService.clearCart(customer._id);
 
+    if (paymentMethod === "cash") {
+      await this._notifyChefsAboutOrder(order);
+    }
+
     return { order, payment, paymobUrl };
   }
 
@@ -75,13 +81,40 @@ class OrderService {
     if (!order) return;
 
     if (order.status === ORDER_STATUS.AWAITING_PAYMENT) {
-      await orderRepository.updateStatus(orderId, ORDER_STATUS.PREPARING);
-      // Here you could also trigger notifications to chefs
+      const updatedOrder = await orderRepository.updateStatus(orderId, ORDER_STATUS.PREPARING);
+      await this._notifyChefsAboutOrder(updatedOrder);
     }
   }
 
   async getCustomerOrders(customerId) {
     return await orderRepository.findByCustomerId(customerId);
+  }
+
+  async _notifyChefsAboutOrder(order) {
+    const itemsByChef = new Map();
+
+    order.items.forEach((item) => {
+      const chefId = (item.chefId._id || item.chefId).toString();
+      const current = itemsByChef.get(chefId) || { itemCount: 0, totalAmount: 0 };
+      current.itemCount += item.quantity;
+      current.totalAmount += item.subtotal;
+      itemsByChef.set(chefId, current);
+    });
+
+    await Promise.all(
+      [...itemsByChef.entries()].map(([chefId, summary]) =>
+        notificationService.notifyChef(chefId, {
+          ...notificationPresets.chefOrderRequest({
+            orderId: order._id,
+            itemCount: summary.itemCount,
+            totalAmount: summary.totalAmount,
+          }),
+          entityType: "Order",
+          entityId: order._id,
+          deduplicationKey: `chef-order:${order._id}:${chefId}`,
+        })
+      )
+    );
   }
 
   async getChefOrders(chefId) {

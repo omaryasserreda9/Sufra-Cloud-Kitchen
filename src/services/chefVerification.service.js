@@ -2,6 +2,8 @@ const ChefVerificationRequest = require("../models/ChefVerificationRequest");
 const Chef = require("../models/Chef");
 const ApiError = require("../utils/ApiError");
 const VERIFICATION_STATUS = require("../constants/verificationStatus");
+const notificationService = require("./notification.service");
+const { notificationPresets } = require("../constants/notificationPresets");
 
 class ChefVerificationService {
   async submitVerificationRequest(
@@ -33,6 +35,21 @@ class ChefVerificationService {
         status: VERIFICATION_STATUS.PENDING,
       });
     }
+
+    const chef = await Chef.findById(chefId).select("firstName lastName kitchenName").lean();
+    const chefName =
+      chef?.kitchenName || `${chef?.firstName || ""} ${chef?.lastName || ""}`.trim() || "A chef";
+
+    await notificationService.notifyAdmins({
+      ...notificationPresets.adminVerificationRequest({
+        chefName,
+        requestId: request._id,
+      }),
+      entityType: "ChefVerificationRequest",
+      entityId: request._id,
+      deduplicationKey: `verification-request:${request._id}:${request.updatedAt.getTime()}`,
+      metadata: { chefId },
+    });
 
     return request;
   }
@@ -75,6 +92,16 @@ class ChefVerificationService {
       // If request failed, ensure chef is not verified
       await Chef.findByIdAndUpdate(request.chefId, { isVerified: false });
     }
+
+    await notificationService.notifyChef(request.chefId, {
+      ...notificationPresets.chefVerificationUpdated({
+        status,
+        requestId: request._id,
+      }),
+      entityType: "ChefVerificationRequest",
+      entityId: request._id,
+      deduplicationKey: `verification-status:${request._id}:${status}`,
+    });
 
     return request;
   }
