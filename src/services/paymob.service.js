@@ -20,10 +20,6 @@ class PaymobService {
         throw new ApiError(400, "Invalid payment amount");
       }
 
-      if (!customer?.email || !customer?.phone) {
-        throw new ApiError(400, "Missing customer data");
-      }
-
       // =========================
       // Step 2: prepare data (Laravel $paymentData)
       // =========================
