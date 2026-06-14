@@ -29,6 +29,17 @@ class UserController {
       new ApiResponse(200, customers, "All customers retrieved successfully")
     );
   });
+
+  /**
+   * Create a new delivery user (Admin only).
+   */
+  createDelivery = asyncHandler(async (req, res) => {
+    const delivery = await userService.createDelivery(req.body);
+
+    res.status(201).json(
+      new ApiResponse(201, delivery, "Delivery user created successfully")
+    );
+  });
 }
 
 module.exports = new UserController();

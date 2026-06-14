@@ -1,4 +1,5 @@
 const orderRepository = require("../repositories/order.repository");
+const Order = require("../models/Order");
 const cartService = require("./cart.service");
 const ApiError = require("../utils/ApiError");
 const ORDER_STATUS = require("../constants/orderStatus");
@@ -135,15 +136,6 @@ class OrderService {
       throw new ApiError(404, "Order not found");
     }
 
-    // If order is completed, calculate and distribute earnings
-    if (status === ORDER_STATUS.COMPLETED) {
-      const settlementService = require("./settlement.service");
-      await settlementService.triggerSettlement(orderId);
-
-      const paymentService = require("./payment.service");
-      await paymentService.confirmPaymentByOrder(orderId);
-    }
-
     return order;
   }
 
@@ -187,16 +179,93 @@ class OrderService {
 
     const updatedOrder = await orderRepository.updateItemStatus(orderId, mealId, status);
 
-    // If whole order is now completed, calculate and distribute earnings
-    if (updatedOrder && updatedOrder.status === ORDER_STATUS.COMPLETED) {
-      const settlementService = require("./settlement.service");
-      await settlementService.triggerSettlement(orderId);
-
-      const paymentService = require("./payment.service");
-      await paymentService.confirmPaymentByOrder(orderId);
+    // Trigger delivery assignment if item is READY
+    if (status === ORDER_ITEM_STATUS.READY) {
+      const deliveryAssignmentService = require("./deliveryAssignment.service");
+      // This is non-blocking to the user response if needed, 
+      // but here we await for simplicity and to ensure queuing works.
+      await deliveryAssignmentService.assignDelivery(orderId);
     }
 
     return updatedOrder;
+  }
+
+  /**
+   * Complete an order by a delivery person.
+   * @param {string} orderId - ID of the order.
+   * @param {string} deliveryId - ID of the delivery person.
+   */
+  async completeOrder(orderId, deliveryId) {
+    const order = await orderRepository.findById(orderId);
+    if (!order) {
+      throw new ApiError(404, "Order not found");
+    }
+
+    if (!order.deliveryId || order.deliveryId._id.toString() !== deliveryId.toString()) {
+      throw new ApiError(403, "This order is not assigned to you");
+    }
+
+    if (order.status === ORDER_STATUS.COMPLETED) {
+      throw new ApiError(400, "Order is already completed");
+    }
+
+    // 1. Mark order as COMPLETED
+    order.status = ORDER_STATUS.COMPLETED;
+    await order.save();
+
+    // 2. Release delivery (isFree = true)
+    const deliveryAssignmentService = require("./deliveryAssignment.service");
+    await deliveryAssignmentService.markAsFree(deliveryId);
+
+    // 3. Handle Payment (especially for Cash on Delivery)
+    const Payment = require("../models/Payment");
+    const { PAYMENT_METHOD, PAYMENT_STATUS } = require("../constants/payment");
+    
+    let payment = await Payment.findOne({ orderId });
+    
+    if (payment && payment.paymentMethod === PAYMENT_METHOD.CASH) {
+      payment.paymentStatus = PAYMENT_STATUS.PAID;
+      payment.paidAt = new Date();
+      await payment.save();
+      console.log(`Cash payment for order ${orderId} marked as PAID.`);
+    }
+
+    // 4. Calculate chef earnings and update wallets via SettlementService
+    // commission rules (FINANCIAL_CONFIG.PLATFORM_COMMISSION_RATE) are applied inside performSettlement
+    const settlementService = require("./settlement.service");
+    await settlementService.triggerSettlement(orderId, payment);
+
+    return order;
+  }
+
+  /**
+   * Get the current active order assigned to a delivery person.
+   * @param {string} deliveryId - ID of the delivery person.
+   * @returns {Promise<Object>} - The active order or null.
+   */
+  async getDeliveryCurrentOrder(deliveryId) {
+    // Current order is one where deliveryId is assigned and status is NOT COMPLETED
+    const order = await Order.findOne({
+      deliveryId,
+      status: { $ne: ORDER_STATUS.COMPLETED },
+    }).populate("customerId", "firstName lastName email phone")
+      .populate("items.mealId");
+    
+    return order;
+  }
+
+  /**
+   * Get the history of completed orders for a delivery person.
+   * @param {string} deliveryId - ID of the delivery person.
+   * @returns {Promise<Array>} - List of completed orders.
+   */
+  async getDeliveryHistory(deliveryId) {
+    return await Order.find({
+      deliveryId,
+      status: ORDER_STATUS.COMPLETED,
+    }).sort({ updatedAt: -1 })
+      .populate("customerId", "firstName lastName email phone")
+      .populate("items.mealId");
   }
 }
 

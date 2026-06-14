@@ -72,6 +72,11 @@ const orderSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
+    deliveryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Delivery",
+      default: null,
+    },
     settlementProcessed: {
       type: Boolean,
       default: false,
@@ -91,7 +96,7 @@ orderSchema.pre("save", function (next) {
   );
 
   this.status = itemStatuses.every((s) => s === ORDER_ITEM_STATUS.DELIVERED)
-    ? ORDER_STATUS.COMPLETED
+    ? ORDER_STATUS.DELIVERED
     : itemStatuses.every(
           (s) =>
             s === ORDER_ITEM_STATUS.READY || s === ORDER_ITEM_STATUS.DELIVERED,

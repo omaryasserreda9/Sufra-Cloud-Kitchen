@@ -18,7 +18,7 @@ Create a new account (Chef, Customer, or Admin).
 - **Auth Required:** No
 - **Mandatory Fields:** `email`, `password`, `role`, `firstName`, `lastName`
 - **Optional Fields:** `phone`
-- **Roles:** `customer`, `chef`, `admin`
+- **Roles:** `customer`, `chef`, `admin`, `delivery`
 - **Request Body Example:**
 ```json
 {
@@ -44,7 +44,7 @@ Create a new account (Chef, Customer, or Admin).
 ```
 
 ### Login User
-Authenticate and receive a JWT token.
+Authenticate and receive a JWT token. Delivery users must use this endpoint with `role: "delivery"`.
 
 - **URL:** `/auth/login`
 - **Method:** `POST`
@@ -53,9 +53,9 @@ Authenticate and receive a JWT token.
 - **Request Body Example:**
 ```json
 {
-  "email": "user@example.com",
+  "email": "delivery@example.com",
   "password": "password123",
-  "role": "chef"
+  "role": "delivery"
 }
 ```
 - **Success Response:**
@@ -841,6 +841,23 @@ Toggle the block status of a customer. When a customer is blocked, they will be 
 }
 ```
 
+### Create Delivery User (Admin Only)
+Create a new delivery personnel account. Public registration for this role is disabled.
+
+- **URL:** `/users/delivery`
+- **Method:** `POST`
+- **Auth Required:** Yes (Admin role)
+- **Mandatory Fields:** `email`, `password`, `phone`, `firstName`, `lastName`
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 201,
+  "data": { ... },
+  "message": "Delivery user created successfully"
+}
+```
+
 ---
 
 ## 13. Contact Module (`/contact`)
@@ -926,6 +943,58 @@ Creates a personalized 7-day meal plan based on budget, daily meal frequency, fa
     ... (for 7 days)
   },
   "message": "Meal plan generated successfully"
+}
+```
+
+---
+
+## 15. Delivery Module (`/delivery`)
+APIs for delivery personnel to manage assignments.
+
+### Get Current Order
+Retrieve the active order assigned to the authenticated delivery person.
+
+- **URL:** `/delivery/current-order`
+- **Method:** `GET`
+- **Auth Required:** Yes (Delivery role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": {
+    "_id": "...",
+    "customerId": { ... },
+    "items": [ ... ],
+    "totalAmount": 100,
+    "status": "out_for_delivery",
+    "shippingAddress": "...",
+    "contactPhone": "..."
+  },
+  "message": "Current order retrieved successfully"
+}
+```
+
+### Get Order History
+Retrieve a list of all completed orders assigned to the delivery person.
+
+- **URL:** `/delivery/history`
+- **Method:** `GET`
+- **Auth Required:** Yes (Delivery role)
+
+### Complete Order
+Mark an assigned order as completed. This action triggers chef earnings distribution and releases the delivery person.
+
+- **URL:** `/delivery/orders/:orderId/complete`
+- **Method:** `POST`
+- **Auth Required:** Yes (Delivery role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": { ... },
+  "message": "Order marked as completed successfully"
 }
 ```
 

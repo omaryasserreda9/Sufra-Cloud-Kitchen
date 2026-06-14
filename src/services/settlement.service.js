@@ -11,23 +11,27 @@ class SettlementService {
   /**
    * Automatically trigger settlement if conditions are met:
    * 1. Order status is COMPLETED
-   * 2. Payment status is PAID
+   * 2. Payment status is PAID (or provided)
    * 3. settlementProcessed is false
    * @param {string} orderId 
+   * @param {Object} [manualPayment] - Optional payment document if already available
    */
-  async triggerSettlement(orderId) {
+  async triggerSettlement(orderId, manualPayment = null) {
     const order = await Order.findById(orderId);
     if (!order) return;
 
     // Check if order is completed
     if (order.status !== ORDER_STATUS.COMPLETED) return;
 
-    // Check if payment is paid
-    const payment = await Payment.findOne({ orderId, paymentStatus: PAYMENT_STATUS.PAID });
-    if (!payment) return;
-
     // Check if already processed
     if (order.settlementProcessed) return;
+
+    // Check if payment is paid
+    const payment = manualPayment || await Payment.findOne({ orderId, paymentStatus: PAYMENT_STATUS.PAID });
+    if (!payment || payment.paymentStatus !== PAYMENT_STATUS.PAID) {
+      console.log(`Settlement skipped for order ${orderId}: Payment not confirmed as PAID.`);
+      return;
+    }
 
     await this.performSettlement(order);
   }

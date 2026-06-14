@@ -1,5 +1,7 @@
 const Customer = require("../models/Customer");
+const Delivery = require("../models/Delivery");
 const ApiError = require("../utils/ApiError");
+const bcrypt = require("bcryptjs");
 
 class UserService {
   /**
@@ -35,6 +37,36 @@ class UserService {
    */
   async getAllCustomers() {
     return await Customer.find().sort({ createdAt: -1 });
+  }
+
+  /**
+   * Create a new delivery user.
+   * @param {Object} deliveryData - Data for the new delivery user.
+   * @returns {Promise<Object>} - The created delivery user.
+   */
+  async createDelivery(deliveryData) {
+    const { firstName, lastName, email, password, phone } = deliveryData;
+
+    const existingDelivery = await Delivery.findOne({ email });
+    if (existingDelivery) {
+      throw new ApiError(400, "Delivery user with this email already exists");
+    }
+
+    const passwordHash = await bcrypt.hash(password, 10);
+
+    const delivery = await Delivery.create({
+      firstName,
+      lastName,
+      email,
+      passwordHash,
+      phone,
+      role: "delivery",
+    });
+
+    const deliveryObject = delivery.toObject();
+    delete deliveryObject.passwordHash;
+
+    return deliveryObject;
   }
 }
 

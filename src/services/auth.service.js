@@ -6,6 +6,7 @@ const connectDB = require("../config/database");
 const googleClient = require("../config/google");
 const crypto = require("crypto");
 const sendEmail = require("../utils/sendEmail");
+const ROLES = require("../constants/roles");
 
 class AuthService {
   /**
@@ -20,6 +21,10 @@ class AuthService {
 
     if (!role || !email || !password) {
       throw new ApiError(400, "Missing required fields");
+    }
+
+    if (role === ROLES.DELIVERY) {
+      throw new ApiError(403, "Delivery accounts can only be created by administrators.");
     }
 
     const Model = getModelByRole(role);
@@ -85,7 +90,7 @@ class AuthService {
       throw new ApiError(401, "Invalid email or password.");
     }
 
-    if (user.isBlocked === 1) {
+    if (role !== ROLES.DELIVERY && user.isBlocked === 1) {
       throw new ApiError(403, "Your account has been blocked.");
     }
 
@@ -118,6 +123,10 @@ class AuthService {
   async googleLogin(idToken, role) {
     if (!role) {
       throw new ApiError(400, "Role is required");
+    }
+
+    if (role === ROLES.DELIVERY) {
+      throw new ApiError(403, "Delivery users cannot use Google login.");
     }
 
     const ticket = await googleClient.verifyIdToken({
