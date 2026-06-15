@@ -245,14 +245,6 @@ class OrderService {
       status,
     );
 
-    // Trigger delivery assignment if item is READY
-    if (status === ORDER_ITEM_STATUS.READY) {
-      const deliveryAssignmentService = require("./deliveryAssignment.service");
-      // This is non-blocking to the user response if needed,
-      // but here we await for simplicity and to ensure queuing works.
-      await deliveryAssignmentService.assignDelivery(orderId);
-    }
-
     return updatedOrder;
   }
 

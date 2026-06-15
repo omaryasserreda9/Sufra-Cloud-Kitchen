@@ -57,6 +57,45 @@ class DeliveryAssignmentService {
   }
 
   /**
+   * Manually assign a specific delivery person to an order.
+   * @param {string} orderId - The ID of the order.
+   * @param {string} deliveryId - The ID of the delivery person.
+   */
+  async manuallyAssignDelivery(orderId, deliveryId) {
+    const order = await orderRepository.findById(orderId);
+    if (!order) {
+      throw new ApiError(404, "Order not found");
+    }
+
+    const delivery = await Delivery.findById(deliveryId);
+    if (!delivery) {
+      throw new ApiError(404, "Delivery person not found");
+    }
+
+    if (!delivery.isFree || delivery.status !== "active") {
+      throw new ApiError(400, "Delivery person is not available");
+    }
+
+    // Assign delivery person to order
+    delivery.isFree = false;
+    delivery.currentOrderId = orderId;
+    await delivery.save();
+
+    order.deliveryId = deliveryId;
+    await order.save();
+
+    console.log(`Manually assigned delivery ${deliveryId} to order ${orderId}`);
+
+    // Remove from pending queue if present
+    this.pendingOrders = this.pendingOrders.filter(id => id !== orderId.toString());
+
+    // Send notification emails
+    if (order.customerId) {
+      await sendDeliveryAssignmentEmails(order, delivery, order.customerId);
+    }
+  }
+
+  /**
    * Process pending assignments when a delivery person becomes free.
    */
   async processPendingAssignments() {
@@ -89,9 +128,6 @@ class DeliveryAssignmentService {
     await delivery.save();
 
     console.log(`Delivery ${deliveryId} is now free.`);
-    
-    // Trigger processing of pending assignments
-    await this.processPendingAssignments();
   }
 }
 

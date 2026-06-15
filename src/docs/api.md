@@ -562,7 +562,7 @@ Remove all items from the cart.
 Manage customer orders and checkout.
 
 ### Checkout
-Create an order from the current cart items.
+Create an order from the current cart items. An OTP is automatically generated for the order.
 
 - **URL:** `/orders/checkout`
 - **Method:** `POST`
@@ -582,7 +582,8 @@ Create an order from the current cart items.
       "totalAmount": 31.98,
       "status": "awaiting_payment",
       "shippingAddress": "...",
-      "contactPhone": "..."
+      "contactPhone": "...",
+      "otp": "123456"
     },
     "payment": {
       "_id": "...",
@@ -1017,11 +1018,18 @@ Retrieve a list of all completed orders assigned to the delivery person.
 - **Auth Required:** Yes (Delivery role)
 
 ### Complete Order
-Mark an assigned order as completed. This action triggers chef earnings distribution, applies platform commissions, and releases the delivery person.
+Mark an assigned order as completed. This action triggers chef earnings distribution, applies platform commissions, and releases the delivery person. **Customer must provide the order OTP to the delivery person.**
 
 - **URL:** `/delivery/orders/:orderId/complete`
 - **Method:** `POST`
 - **Auth Required:** Yes (Delivery role)
+- **Mandatory Fields:** `otp` (6-digit code from the customer)
+- **Request Body Example:**
+```json
+{
+  "otp": "123456"
+}
+```
 - **Success Response:**
 ```json
 {
@@ -1034,7 +1042,55 @@ Mark an assigned order as completed. This action triggers chef earnings distribu
 
 ---
 
-## 16. Notifications Module (`/notifications`)
+## 16. Admin Delivery Management Module (`/admin`)
+APIs for administrators to manage delivery assignments manually.
+
+### Get Delivery Management Data
+Retrieve a list of free delivery personnel and unassigned orders.
+
+- **URL:** `/admin/delivery-management`
+- **Method:** `GET`
+- **Auth Required:** Yes (Admin role)
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": {
+    "freeDeliveryPersonnel": [ ... ],
+    "unassignedOrders": [ ... ]
+  },
+  "message": "Delivery management data retrieved successfully"
+}
+```
+
+### Assign Delivery Person
+Manually assign a specific delivery person to an unassigned order. This action sends notification emails to both the delivery person and the customer (including the OTP).
+
+- **URL:** `/admin/assign-delivery`
+- **Method:** `POST`
+- **Auth Required:** Yes (Admin role)
+- **Mandatory Fields:** `orderId`, `deliveryId`
+- **Request Body Example:**
+```json
+{
+  "orderId": "orderId123",
+  "deliveryId": "deliveryId123"
+}
+```
+- **Success Response:**
+```json
+{
+  "success": true,
+  "statusCode": 200,
+  "data": null,
+  "message": "Order assigned to delivery person successfully"
+}
+```
+
+---
+
+## 17. Notifications Module (`/notifications`)
 Durable in-app notifications for admin and chef accounts. Notifications are typed,
 prioritized, deduplicated per recipient, and automatically expire after 90 days.
 

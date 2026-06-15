@@ -24,6 +24,7 @@ const contactRoutes = require("./routes/contact.routes");
 const mealPlanningRoutes = require("./routes/mealPlanning.routes");
 const deliveryRoutes = require("./routes/delivery.routes");
 const notificationRoutes = require("./routes/notification.routes");
+const adminRoutes = require("./routes/admin.routes");
 
 connectDB().catch(console.error);
 
@@ -67,6 +68,7 @@ app.use("/api/meal-planning", mealPlanningRoutes);
 app.use("/api/contact", contactRoutes);
 app.use("/api/delivery", deliveryRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/admin", adminRoutes);
 
 // 404 Handler
 app.use((req, res) => {
