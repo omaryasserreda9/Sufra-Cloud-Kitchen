@@ -5,6 +5,7 @@ const ApiError = require("../utils/ApiError");
 const ORDER_STATUS = require("../constants/orderStatus");
 const notificationService = require("./notification.service");
 const { notificationPresets } = require("../constants/notificationPresets");
+const ROLES = require("../constants/roles");
 
 class OrderService {
   async checkout(customer, checkoutData) {
@@ -94,6 +95,18 @@ class OrderService {
         ORDER_STATUS.PREPARING,
       );
       await this._notifyChefsAboutOrder(updatedOrder);
+
+      // Notify Customer
+      await notificationService._safelyCreate(() =>
+        notificationService.createForRecipient(order.customerId._id, ROLES.CUSTOMER, {
+          ...notificationPresets.customerOrderStatusUpdated({
+            orderId: updatedOrder._id,
+            status: updatedOrder.status,
+          }),
+          entityType: "Order",
+          entityId: updatedOrder._id,
+        }),
+      );
     }
   }
 
@@ -185,6 +198,18 @@ class OrderService {
     if (!order) {
       throw new ApiError(404, "Order not found");
     }
+
+    // Notify Customer
+    await notificationService._safelyCreate(() =>
+      notificationService.createForRecipient(order.customerId, ROLES.CUSTOMER, {
+        ...notificationPresets.customerOrderStatusUpdated({
+          orderId: order._id,
+          status: order.status,
+        }),
+        entityType: "Order",
+        entityId: order._id,
+      }),
+    );
 
     return order;
   }
@@ -286,6 +311,18 @@ class OrderService {
 
     const check = await orderRepository.findById(orderId);
     console.log("Status from DB:", check.status);
+
+    // Notify Customer about completion
+    await notificationService._safelyCreate(() =>
+      notificationService.createForRecipient(order.customerId._id, ROLES.CUSTOMER, {
+        ...notificationPresets.customerOrderStatusUpdated({
+          orderId: order._id,
+          status: order.status,
+        }),
+        entityType: "Order",
+        entityId: order._id,
+      }),
+    );
 
     // 2. Release delivery (isFree = true)
     const deliveryAssignmentService = require("./deliveryAssignment.service");

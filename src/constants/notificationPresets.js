@@ -7,6 +7,9 @@ const NOTIFICATION_TYPES = {
   CHEF_ORDER_REQUEST: "chef.order.requested",
   CHEF_MEAL_REVIEW: "chef.meal.reviewed",
   CHEF_WITHDRAWAL_UPDATED: "chef.withdrawal.updated",
+  CUSTOMER_ORDER_STATUS_UPDATED: "customer.order.status_updated",
+  CUSTOMER_DELIVERY_ASSIGNED: "customer.delivery.assigned",
+  DELIVERY_ORDER_ASSIGNED: "delivery.order.assigned",
 };
 
 const NOTIFICATION_PRIORITIES = {
@@ -79,6 +82,30 @@ const notificationPresets = {
     title: "Withdrawal status updated",
     body: `Your ${amount} EGP withdrawal request was ${status}.`,
     actionPath: `/chef/withdrawals/${withdrawalId}`,
+  }),
+
+  customerOrderStatusUpdated: ({ orderId, status }) => ({
+    type: NOTIFICATION_TYPES.CUSTOMER_ORDER_STATUS_UPDATED,
+    priority: NOTIFICATION_PRIORITIES.HIGH,
+    title: "Order status updated",
+    body: `Your order #${orderId.toString().slice(-6)} is now ${status}.`,
+    actionPath: `/orders/${orderId}`,
+  }),
+
+  customerDeliveryAssigned: ({ orderId, deliveryName }) => ({
+    type: NOTIFICATION_TYPES.CUSTOMER_DELIVERY_ASSIGNED,
+    priority: NOTIFICATION_PRIORITIES.HIGH,
+    title: "Delivery person assigned",
+    body: `${deliveryName} has been assigned to deliver your order #${orderId.toString().slice(-6)}.`,
+    actionPath: `/orders/${orderId}`,
+  }),
+
+  deliveryOrderAssigned: ({ orderId, customerName, address }) => ({
+    type: NOTIFICATION_TYPES.DELIVERY_ORDER_ASSIGNED,
+    priority: NOTIFICATION_PRIORITIES.URGENT,
+    title: "New delivery assigned",
+    body: `You have been assigned to deliver order #${orderId.toString().slice(-6)} to ${customerName} at ${address}.`,
+    actionPath: `/delivery/orders/${orderId}`,
   }),
 };
 

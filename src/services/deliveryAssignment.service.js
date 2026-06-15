@@ -2,6 +2,9 @@ const Delivery = require("../models/Delivery");
 const orderRepository = require("../repositories/order.repository");
 const ApiError = require("../utils/ApiError");
 const { sendDeliveryAssignmentEmails } = require("../utils/deliveryNotifications");
+const notificationService = require("./notification.service");
+const { notificationPresets } = require("../constants/notificationPresets");
+const ROLES = require("../constants/roles");
 
 class DeliveryAssignmentService {
   constructor() {
@@ -42,10 +45,34 @@ class DeliveryAssignmentService {
 
       console.log(`Assigned delivery ${freeDelivery._id} to order ${orderId}`);
 
-      // Send notification emails
-      // Note: orderRepository.findById(orderId) already populates customerId
+      // Send notifications and emails
       if (order.customerId) {
         await sendDeliveryAssignmentEmails(order, freeDelivery, order.customerId);
+
+        // Notify Customer
+        await notificationService._safelyCreate(() =>
+          notificationService.createForRecipient(order.customerId._id, ROLES.CUSTOMER, {
+            ...notificationPresets.customerDeliveryAssigned({
+              orderId: order._id,
+              deliveryName: `${freeDelivery.firstName} ${freeDelivery.lastName}`,
+            }),
+            entityType: "Order",
+            entityId: order._id,
+          }),
+        );
+
+        // Notify Delivery Person
+        await notificationService._safelyCreate(() =>
+          notificationService.createForRecipient(freeDelivery._id, ROLES.DELIVERY, {
+            ...notificationPresets.deliveryOrderAssigned({
+              orderId: order._id,
+              customerName: `${order.customerId.firstName} ${order.customerId.lastName}`,
+              address: order.shippingAddress,
+            }),
+            entityType: "Order",
+            entityId: order._id,
+          }),
+        );
       }
     } else {
       // No delivery available, queue the order
@@ -89,9 +116,34 @@ class DeliveryAssignmentService {
     // Remove from pending queue if present
     this.pendingOrders = this.pendingOrders.filter(id => id !== orderId.toString());
 
-    // Send notification emails
+    // Send notifications and emails
     if (order.customerId) {
       await sendDeliveryAssignmentEmails(order, delivery, order.customerId);
+
+      // Notify Customer
+      await notificationService._safelyCreate(() =>
+        notificationService.createForRecipient(order.customerId._id, ROLES.CUSTOMER, {
+          ...notificationPresets.customerDeliveryAssigned({
+            orderId: order._id,
+            deliveryName: `${delivery.firstName} ${delivery.lastName}`,
+          }),
+          entityType: "Order",
+          entityId: order._id,
+        }),
+      );
+
+      // Notify Delivery Person
+      await notificationService._safelyCreate(() =>
+        notificationService.createForRecipient(delivery._id, ROLES.DELIVERY, {
+          ...notificationPresets.deliveryOrderAssigned({
+            orderId: order._id,
+            customerName: `${order.customerId.firstName} ${order.customerId.lastName}`,
+            address: order.shippingAddress,
+          }),
+          entityType: "Order",
+          entityId: order._id,
+        }),
+      );
     }
   }
 
