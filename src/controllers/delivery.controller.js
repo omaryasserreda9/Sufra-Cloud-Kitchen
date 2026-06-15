@@ -36,9 +36,10 @@ class DeliveryController {
    */
   completeOrder = asyncHandler(async (req, res) => {
     const { orderId } = req.params;
+    const { otp } = req.body;
     const deliveryId = req.user._id;
 
-    const order = await orderService.completeOrder(orderId, deliveryId);
+    const order = await orderService.completeOrder(orderId, deliveryId, otp);
 
     res.status(200).json(
       new ApiResponse(200, order, "Order marked as completed successfully")

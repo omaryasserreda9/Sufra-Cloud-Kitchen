@@ -2,6 +2,7 @@ const express = require("express");
 const deliveryController = require("../controllers/delivery.controller");
 const { authMiddleware } = require("../middlewares/auth.middleware");
 const authorize = require("../middlewares/role.middleware");
+const validateRequest = require("../middlewares/validate.middleware");
 const ROLES = require("../constants/roles");
 
 const router = express.Router();
@@ -29,6 +30,10 @@ router.get("/history", deliveryController.getHistory);
  * @desc    Mark order as completed
  * @access  Private (Delivery)
  */
-router.post("/orders/:orderId/complete", deliveryController.completeOrder);
+router.post(
+  "/orders/:orderId/complete",
+  validateRequest(["otp"]),
+  deliveryController.completeOrder,
+);
 
 module.exports = router;

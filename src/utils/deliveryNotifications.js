@@ -44,6 +44,7 @@ Name: ${delivery.firstName} ${delivery.lastName}
 Phone: ${delivery.phone}
 
 Your order is on its way!
+Please provide this OTP to the delivery person to complete your order: ${order.otp}
 `;
 
   // Send emails in parallel

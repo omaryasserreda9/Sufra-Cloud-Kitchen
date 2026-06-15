@@ -46,12 +46,14 @@ class OrderService {
     });
 
     // 3. Create Order
+    const otp = Math.floor(100000 + Math.random() * 900000).toString();
     const order = await orderRepository.create({
       customerId: customer._id,
       items: orderItems,
       totalAmount,
       shippingAddress: shippingAddress || customer.address,
       contactPhone: contactPhone || customer.phone,
+      otp,
       status:
         paymentMethod === "cash"
           ? ORDER_STATUS.PREPARING
@@ -258,8 +260,9 @@ class OrderService {
    * Complete an order by a delivery person.
    * @param {string} orderId - ID of the order.
    * @param {string} deliveryId - ID of the delivery person.
+   * @param {string} otp - The OTP provided by the customer.
    */
-  async completeOrder(orderId, deliveryId) {
+  async completeOrder(orderId, deliveryId, otp) {
     const order = await orderRepository.findById(orderId);
     if (!order) {
       throw new ApiError(404, "Order not found");
@@ -275,6 +278,12 @@ class OrderService {
     if (order.status === ORDER_STATUS.COMPLETED) {
       throw new ApiError(400, "Order is already completed");
     }
+
+    // Validate OTP
+    if (order.otp !== otp) {
+      throw new ApiError(400, "Invalid OTP");
+    }
+
     console.log(ORDER_STATUS);
     // 1. Mark order as COMPLETED
     order.status = ORDER_STATUS.COMPLETED;
