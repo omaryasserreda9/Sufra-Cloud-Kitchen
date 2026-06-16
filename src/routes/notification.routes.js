@@ -6,7 +6,7 @@ const ROLES = require("../constants/roles");
 
 const router = express.Router();
 
-router.use(authMiddleware, authorize(ROLES.ADMIN, ROLES.CHEF));
+router.use(authMiddleware, authorize(ROLES.ADMIN, ROLES.CHEF, ROLES.CUSTOMER, ROLES.DELIVERY));
 
 router.get("/", notificationController.getNotifications);
 router.get("/unread-count", notificationController.getUnreadCount);
