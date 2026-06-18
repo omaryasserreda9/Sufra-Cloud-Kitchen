@@ -46,34 +46,7 @@ class DeliveryAssignmentService {
       console.log(`Assigned delivery ${freeDelivery._id} to order ${orderId}`);
 
       // Send notifications and emails
-      if (order.customerId) {
-        await sendDeliveryAssignmentEmails(order, freeDelivery, order.customerId);
-
-        // Notify Customer
-        await notificationService._safelyCreate(() =>
-          notificationService.createForRecipient(order.customerId._id, ROLES.CUSTOMER, {
-            ...notificationPresets.customerDeliveryAssigned({
-              orderId: order._id,
-              deliveryName: `${freeDelivery.firstName} ${freeDelivery.lastName}`,
-            }),
-            entityType: "Order",
-            entityId: order._id,
-          }),
-        );
-
-        // Notify Delivery Person
-        await notificationService._safelyCreate(() =>
-          notificationService.createForRecipient(freeDelivery._id, ROLES.DELIVERY, {
-            ...notificationPresets.deliveryOrderAssigned({
-              orderId: order._id,
-              customerName: `${order.customerId.firstName} ${order.customerId.lastName}`,
-              address: order.shippingAddress,
-            }),
-            entityType: "Order",
-            entityId: order._id,
-          }),
-        );
-      }
+      await this._notifyAssignment(order, freeDelivery);
     } else {
       // No delivery available, queue the order
       if (!this.pendingOrders.includes(orderId.toString())) {
@@ -117,34 +90,73 @@ class DeliveryAssignmentService {
     this.pendingOrders = this.pendingOrders.filter(id => id !== orderId.toString());
 
     // Send notifications and emails
-    if (order.customerId) {
-      await sendDeliveryAssignmentEmails(order, delivery, order.customerId);
+    await this._notifyAssignment(order, delivery);
+  }
 
-      // Notify Customer
-      await notificationService._safelyCreate(() =>
-        notificationService.createForRecipient(order.customerId._id, ROLES.CUSTOMER, {
-          ...notificationPresets.customerDeliveryAssigned({
+  /**
+   * Private helper to handle assignment notifications.
+   */
+  async _notifyAssignment(order, delivery) {
+    if (!order.customerId) return;
+
+    // Send Emails (grouping is handled inside sendDeliveryAssignmentEmails)
+    await sendDeliveryAssignmentEmails(order, delivery, order.customerId);
+
+    // Notify Customer (In-App)
+    await notificationService._safelyCreate(() =>
+      notificationService.createForRecipient(order.customerId._id, ROLES.CUSTOMER, {
+        ...notificationPresets.customerDeliveryAssigned({
+          orderId: order._id,
+          deliveryName: `${delivery.firstName} ${delivery.lastName}`,
+        }),
+        entityType: "Order",
+        entityId: order._id,
+      }),
+    );
+
+    // Collect kitchen addresses and unique chefs
+    const chefs = new Map();
+    const pickupLocations = [];
+
+    order.items.forEach((item) => {
+      const chef = item.chefId;
+      if (!chefs.has(chef._id.toString())) {
+        chefs.set(chef._id.toString(), chef);
+        pickupLocations.push(
+          `${chef.kitchenName || chef.firstName} at ${chef.kitchenAddress || "N/A"}`
+        );
+      }
+    });
+
+    // Notify Delivery Person (In-App)
+    await notificationService._safelyCreate(() =>
+      notificationService.createForRecipient(delivery._id, ROLES.DELIVERY, {
+        ...notificationPresets.deliveryOrderAssigned({
+          orderId: order._id,
+          customerName: `${order.customerId.firstName} ${order.customerId.lastName}`,
+          address: order.shippingAddress,
+          pickupLocations: pickupLocations.join(", "),
+        }),
+        entityType: "Order",
+        entityId: order._id,
+      }),
+    );
+
+    // Notify each Chef (In-App)
+    const chefNotifications = Array.from(chefs.values()).map((chef) =>
+      notificationService._safelyCreate(() =>
+        notificationService.createForRecipient(chef._id, ROLES.CHEF, {
+          ...notificationPresets.chefDeliveryAssigned({
             orderId: order._id,
             deliveryName: `${delivery.firstName} ${delivery.lastName}`,
           }),
           entityType: "Order",
           entityId: order._id,
-        }),
-      );
+        })
+      )
+    );
 
-      // Notify Delivery Person
-      await notificationService._safelyCreate(() =>
-        notificationService.createForRecipient(delivery._id, ROLES.DELIVERY, {
-          ...notificationPresets.deliveryOrderAssigned({
-            orderId: order._id,
-            customerName: `${order.customerId.firstName} ${order.customerId.lastName}`,
-            address: order.shippingAddress,
-          }),
-          entityType: "Order",
-          entityId: order._id,
-        }),
-      );
-    }
+    await Promise.all(chefNotifications);
   }
 
   /**

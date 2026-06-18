@@ -10,6 +10,7 @@ const NOTIFICATION_TYPES = {
   CUSTOMER_ORDER_STATUS_UPDATED: "customer.order.status_updated",
   CUSTOMER_DELIVERY_ASSIGNED: "customer.delivery.assigned",
   DELIVERY_ORDER_ASSIGNED: "delivery.order.assigned",
+  CHEF_DELIVERY_ASSIGNED: "chef.delivery.assigned",
 };
 
 const NOTIFICATION_PRIORITIES = {
@@ -100,12 +101,20 @@ const notificationPresets = {
     actionPath: `/orders/${orderId}`,
   }),
 
-  deliveryOrderAssigned: ({ orderId, customerName, address }) => ({
+  deliveryOrderAssigned: ({ orderId, customerName, address, pickupLocations }) => ({
     type: NOTIFICATION_TYPES.DELIVERY_ORDER_ASSIGNED,
     priority: NOTIFICATION_PRIORITIES.URGENT,
     title: "New delivery assigned",
-    body: `You have been assigned to deliver order #${orderId.toString().slice(-6)} to ${customerName} at ${address}.`,
+    body: `Deliver order #${orderId.toString().slice(-6)} to ${customerName} at ${address}. Pickups: ${pickupLocations}`,
     actionPath: `/delivery/orders/${orderId}`,
+  }),
+
+  chefDeliveryAssigned: ({ orderId, deliveryName }) => ({
+    type: NOTIFICATION_TYPES.CHEF_DELIVERY_ASSIGNED,
+    priority: NOTIFICATION_PRIORITIES.HIGH,
+    title: "Delivery person assigned",
+    body: `${deliveryName} will pick up your items for order #${orderId.toString().slice(-6)}.`,
+    actionPath: `/chef/orders/${orderId}`,
   }),
 };
 
