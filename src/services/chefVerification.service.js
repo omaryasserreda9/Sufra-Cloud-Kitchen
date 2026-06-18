@@ -11,7 +11,8 @@ class ChefVerificationService {
     nationalIdImageUrl,
     nationalIdBackImageUrl,
     healthCertificateImageUrl,
-    kitchenImageUrls
+    kitchenImageUrls,
+    kitchenAddress
   ) {
     // Find existing request
     let request = await ChefVerificationRequest.findOne({ chefId });
@@ -22,6 +23,7 @@ class ChefVerificationService {
       request.nationalIdBackImage = nationalIdBackImageUrl;
       request.healthCertificateImage = healthCertificateImageUrl;
       request.kitchenImages = kitchenImageUrls;
+      request.kitchenAddress = kitchenAddress;
       request.status = VERIFICATION_STATUS.PENDING;
       await request.save();
     } else {
@@ -32,6 +34,7 @@ class ChefVerificationService {
         nationalIdBackImage: nationalIdBackImageUrl,
         healthCertificateImage: healthCertificateImageUrl,
         kitchenImages: kitchenImageUrls,
+        kitchenAddress,
         status: VERIFICATION_STATUS.PENDING,
       });
     }
@@ -85,9 +88,12 @@ class ChefVerificationService {
       throw new ApiError(404, "Verification request not found");
     }
 
-    // If request is approved, update chef verification status
+    // If request is approved, update chef verification status and kitchen address
     if (status === VERIFICATION_STATUS.APPROVED) {
-      await Chef.findByIdAndUpdate(request.chefId, { isVerified: true });
+      await Chef.findByIdAndUpdate(request.chefId, {
+        isVerified: true,
+        kitchenAddress: request.kitchenAddress,
+      });
     } else if (status === VERIFICATION_STATUS.FAILED) {
       // If request failed, ensure chef is not verified
       await Chef.findByIdAndUpdate(request.chefId, { isVerified: false });

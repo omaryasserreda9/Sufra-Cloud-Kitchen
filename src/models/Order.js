@@ -105,10 +105,7 @@ orderSchema.pre("save", function (next) {
 
   this.status = itemStatuses.every((s) => s === ORDER_ITEM_STATUS.DELIVERED)
     ? ORDER_STATUS.DELIVERED
-    : itemStatuses.every(
-          (s) =>
-            s === ORDER_ITEM_STATUS.READY || s === ORDER_ITEM_STATUS.DELIVERED,
-        )
+    : itemStatuses.some((s) => s === ORDER_ITEM_STATUS.READY)
       ? ORDER_STATUS.OUT_FOR_DELIVERY
       : ORDER_STATUS.PREPARING;
 

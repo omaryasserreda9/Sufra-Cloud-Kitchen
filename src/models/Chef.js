@@ -48,6 +48,10 @@ const chefSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    kitchenAddress: {
+      type: String,
+      trim: true,
+    },
     description: {
       type: String,
       trim: true,

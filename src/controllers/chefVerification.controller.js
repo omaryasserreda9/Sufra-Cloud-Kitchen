@@ -21,6 +21,7 @@ class ChefVerificationController {
 
   submitRequest = asyncHandler(async (req, res) => {
     const chefId = req.user._id;
+    const { kitchenAddress } = req.body;
 
     const nationalIdImageFile = req.files?.nationalIdImage?.[0];
     const nationalIdBackImageFile = req.files?.nationalIdBackImage?.[0];
@@ -33,11 +34,12 @@ class ChefVerificationController {
       !healthCertificateImageFile ||
       !kitchenImageFiles ||
       kitchenImageFiles.length < 3 ||
-      kitchenImageFiles.length > 5
+      kitchenImageFiles.length > 5 ||
+      !kitchenAddress
     ) {
       throw new ApiError(
         400,
-        "National ID (front & back), Health Certificate, and 3-5 kitchen images are required"
+        "National ID (front & back), Health Certificate, 3-5 kitchen images, and kitchen address are required"
       );
     }
 
@@ -64,7 +66,8 @@ class ChefVerificationController {
       nationalIdImageUrl,
       nationalIdBackImageUrl,
       healthCertificateImageUrl,
-      kitchenImageUrls
+      kitchenImageUrls,
+      kitchenAddress
     );
 
     res

@@ -25,6 +25,11 @@ const chefVerificationRequestSchema = new mongoose.Schema(
       type: [String],
       required: true,
     },
+    kitchenAddress: {
+      type: String,
+      required: true,
+      trim: true,
+    },
     status: {
       type: String,
       enum: Object.values(VERIFICATION_STATUS),

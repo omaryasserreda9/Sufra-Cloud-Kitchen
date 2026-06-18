@@ -23,8 +23,8 @@ class AdminController {
     // (e.g., status is PREPARING or OUT_FOR_DELIVERY but deliveryId is null)
     // Actually, usually READY items trigger assignment.
     const unassignedOrders = await Order.find({
-      deliveryId: null,
-      status: { $in: [ORDER_STATUS.PREPARING, ORDER_STATUS.OUT_FOR_DELIVERY] },
+      deliveryId: null, 
+      status: { $in: [ORDER_STATUS.OUT_FOR_DELIVERY, ORDER_STATUS.DELIVERED] },
     }).populate("customerId", "firstName lastName phone");
 
     res.status(200).json(
