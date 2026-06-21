@@ -9,7 +9,7 @@ class OrderRepository {
     return await Order.findById(id)
       .populate("customerId", "firstName lastName email phone")
       .populate("items.mealId")
-      .populate("items.chefId", "firstName lastName kitchenName");
+      .populate("items.chefId", "firstName lastName kitchenName email");
   }
 
   async findByCustomerId(customerId) {

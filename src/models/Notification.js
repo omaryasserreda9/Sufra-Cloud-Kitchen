@@ -15,7 +15,7 @@ const notificationSchema = new mongoose.Schema(
     recipientRole: {
       type: String,
       required: true,
-      enum: [ROLES.ADMIN, ROLES.CHEF],
+      enum: [ROLES.ADMIN, ROLES.CHEF, ROLES.CUSTOMER, ROLES.DELIVERY],
       index: true,
     },
     type: {
