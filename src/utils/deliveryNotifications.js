@@ -82,52 +82,45 @@ Please provide this OTP to the delivery person to complete your order:
 ${order.otp}
 `;
 
-  try {
-    // Delivery email
-    if (delivery.email) {
-      console.log("Sending email to delivery:", delivery.email);
+  // Delivery email
+  if (delivery.email) {
+    console.log("Sending email to delivery:", delivery.email);
 
-      await sendEmail(delivery.email, deliverySubject, deliveryMessage);
+    await sendEmail(delivery.email, deliverySubject, deliveryMessage);
 
-      console.log("✓ Delivery email sent");
-    } else {
-      console.error("Delivery email missing");
-    }
+    console.log("✓ Delivery email sent");
+  } else {
+    console.error("Delivery email missing");
+  }
 
-    // Customer email
-    if (customer.email) {
-      console.log("Sending email to customer:", customer.email);
+  // Customer email
+  if (customer.email) {
+    console.log("Sending email to customer:", customer.email);
 
-      await sendEmail(customer.email, customerSubject, customerMessage);
+    await sendEmail(customer.email, customerSubject, customerMessage);
 
-      console.log("✓ Customer email sent");
-    } else {
-      console.error("Customer email missing");
-    }
+    console.log("✓ Customer email sent");
+  } else {
+    console.error("Customer email missing");
+  }
 
-    // Chef emails
-    for (const { chef, items } of itemsByChef.values()) {
-      try {
-        console.log(
-          "Chef:",
-          chef.firstName,
-          chef.lastName,
-          "Email:",
-          chef.email,
-        );
+  // Chef emails
+  for (const { chef, items } of itemsByChef.values()) {
+    try {
+      console.log("Chef:", chef.firstName, chef.lastName, "Email:", chef.email);
 
-        if (!chef.email) {
-          console.error(`Chef ${chef.firstName} ${chef.lastName} has no email`);
-          continue;
-        }
+      if (!chef.email) {
+        console.error(`Chef ${chef.firstName} ${chef.lastName} has no email`);
+        continue;
+      }
 
-        const chefSubject = `Delivery Person Assigned for Order #${order._id}`;
+      const chefSubject = `Delivery Person Assigned for Order #${order._id}`;
 
-        const itemsList = items
-          .map((item) => `- ${item.name} (x${item.quantity})`)
-          .join("\n");
+      const itemsList = items
+        .map((item) => `- ${item.name} (x${item.quantity})`)
+        .join("\n");
 
-        const chefMessage = `
+      const chefMessage = `
 Hello ${chef.firstName},
 
 A delivery person has been assigned to pick up items for order #${order._id}.
@@ -142,23 +135,18 @@ ${itemsList}
 Please have these items ready for pickup.
 `;
 
-        await sendEmail(chef.email, chefSubject, chefMessage);
+      await sendEmail(chef.email, chefSubject, chefMessage);
 
-        console.log(`✓ Chef email sent to ${chef.firstName} ${chef.lastName}`);
-      } catch (err) {
-        console.error(
-          `Failed sending email to chef ${chef.firstName} ${chef.lastName}`,
-        );
-        console.error(err);
-      }
+      console.log(`✓ Chef email sent to ${chef.firstName} ${chef.lastName}`);
+    } catch (err) {
+      console.error(
+        `Failed sending email to chef ${chef.firstName} ${chef.lastName}`,
+      );
+      console.error(err);
     }
-
-    console.log(`Notification emails sent for order ${order._id}`);
-  } catch (error) {
-    console.error("Failed to send delivery notification emails:");
-    console.error(error);
-    console.error(error.stack);
   }
+
+  console.log(`Notification emails sent for order ${order._id}`);
 };
 
 module.exports = { sendDeliveryAssignmentEmails };

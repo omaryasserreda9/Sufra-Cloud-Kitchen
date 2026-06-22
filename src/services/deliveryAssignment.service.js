@@ -83,6 +83,8 @@ class DeliveryAssignmentService {
       throw new ApiError(400, "Delivery person is not available");
     }
 
+    await this._notifyAssignment(order, delivery);
+
     // Assign delivery person to order
     delivery.isFree = false;
     delivery.currentOrderId = orderId;
@@ -99,7 +101,6 @@ class DeliveryAssignmentService {
     );
 
     // Send notifications and emails
-    await this._notifyAssignment(order, delivery);
   }
 
   /**
@@ -109,139 +110,76 @@ class DeliveryAssignmentService {
    * Private helper to handle assignment notifications.
    */
   async _notifyAssignment(order, delivery) {
-    try {
-      console.log("========== _notifyAssignment Started ==========");
-      console.log("Order ID:", order._id);
+    if (!order.customerId) {
+      throw new ApiError(400, "Order customer not found");
+    }
 
-      if (!order.customerId) {
-        console.log("No customer found on order.");
+    await sendDeliveryAssignmentEmails(order, delivery, order.customerId);
+
+    await notificationService._safelyCreate(() =>
+      notificationService.createForRecipient(
+        order.customerId._id,
+        ROLES.CUSTOMER,
+        {
+          ...notificationPresets.customerDeliveryAssigned({
+            orderId: order._id,
+            deliveryName: `${delivery.firstName} ${delivery.lastName}`,
+          }),
+          entityType: "Order",
+          entityId: order._id,
+        },
+      ),
+    );
+
+    const chefs = new Map();
+    const pickupLocations = [];
+
+    order.items.forEach((item) => {
+      const chef = item.chefId;
+
+      if (!chef) {
         return;
       }
 
-      console.log("Customer:", order.customerId);
-      console.log("Delivery:", delivery);
+      if (!chefs.has(chef._id.toString())) {
+        chefs.set(chef._id.toString(), chef);
 
-      // ================= EMAILS =================
-      try {
-        console.log("========== SENDING EMAILS ==========");
-        console.log("Customer email:", order.customerId?.email);
-        console.log("Delivery email:", delivery?.email);
-
-        const emailResult = await sendDeliveryAssignmentEmails(
-          order,
-          delivery,
-          order.customerId,
+        pickupLocations.push(
+          `${chef.kitchenName || chef.firstName} at ${
+            chef.kitchenAddress || "N/A"
+          }`,
         );
-
-        console.log("Emails sent successfully.");
-        console.log(emailResult);
-      } catch (error) {
-        console.error("ERROR SENDING EMAILS:");
-        console.error(error);
-        console.error(error.stack);
       }
+    });
 
-      // ================= CUSTOMER NOTIFICATION =================
-      try {
-        console.log("Creating customer notification...");
+    await notificationService._safelyCreate(() =>
+      notificationService.createForRecipient(delivery._id, ROLES.DELIVERY, {
+        ...notificationPresets.deliveryOrderAssigned({
+          orderId: order._id,
+          customerName: `${order.customerId.firstName} ${order.customerId.lastName}`,
+          address: order.shippingAddress,
+          pickupLocations: pickupLocations.join(", "),
+        }),
+        entityType: "Order",
+        entityId: order._id,
+      }),
+    );
 
-        await notificationService._safelyCreate(() =>
-          notificationService.createForRecipient(
-            order.customerId._id,
-            ROLES.CUSTOMER,
-            {
-              ...notificationPresets.customerDeliveryAssigned({
-                orderId: order._id,
-                deliveryName: `${delivery.firstName} ${delivery.lastName}`,
-              }),
-              entityType: "Order",
-              entityId: order._id,
-            },
-          ),
-        );
-
-        console.log("Customer notification created.");
-      } catch (error) {
-        console.error("Customer notification failed:");
-        console.error(error);
-      }
-
-      // ================= COLLECT CHEFS =================
-      const chefs = new Map();
-      const pickupLocations = [];
-
-      order.items.forEach((item) => {
-        const chef = item.chefId;
-
-        if (!chef) return;
-
-        if (!chefs.has(chef._id.toString())) {
-          chefs.set(chef._id.toString(), chef);
-
-          pickupLocations.push(
-            `${chef.kitchenName || chef.firstName} at ${
-              chef.kitchenAddress || "N/A"
-            }`,
-          );
-        }
-      });
-
-      // ================= DELIVERY NOTIFICATION =================
-      try {
-        console.log("Creating delivery notification...");
-
-        await notificationService._safelyCreate(() =>
-          notificationService.createForRecipient(delivery._id, ROLES.DELIVERY, {
-            ...notificationPresets.deliveryOrderAssigned({
+    await Promise.all(
+      Array.from(chefs.values()).map((chef) =>
+        notificationService._safelyCreate(() =>
+          notificationService.createForRecipient(chef._id, ROLES.CHEF, {
+            ...notificationPresets.chefDeliveryAssigned({
               orderId: order._id,
-              customerName: `${order.customerId.firstName} ${order.customerId.lastName}`,
-              address: order.shippingAddress,
-              pickupLocations: pickupLocations.join(", "),
+              deliveryName: `${delivery.firstName} ${delivery.lastName}`,
             }),
             entityType: "Order",
             entityId: order._id,
           }),
-        );
-
-        console.log("Delivery notification created.");
-      } catch (error) {
-        console.error("Delivery notification failed:");
-        console.error(error);
-      }
-
-      // ================= CHEF NOTIFICATIONS =================
-      try {
-        console.log("Creating chef notifications...");
-
-        const chefNotifications = Array.from(chefs.values()).map((chef) =>
-          notificationService._safelyCreate(() =>
-            notificationService.createForRecipient(chef._id, ROLES.CHEF, {
-              ...notificationPresets.chefDeliveryAssigned({
-                orderId: order._id,
-                deliveryName: `${delivery.firstName} ${delivery.lastName}`,
-              }),
-              entityType: "Order",
-              entityId: order._id,
-            }),
-          ),
-        );
-
-        await Promise.all(chefNotifications);
-
-        console.log("Chef notifications created.");
-      } catch (error) {
-        console.error("Chef notifications failed:");
-        console.error(error);
-      }
-
-      console.log("========== _notifyAssignment Finished ==========");
-    } catch (error) {
-      console.error("Unexpected error inside _notifyAssignment:");
-      console.error(error);
-      console.error(error.stack);
-    }
+        ),
+      ),
+    );
   }
-
   /**
    * Process pending assignments when a delivery person becomes free.
    */
